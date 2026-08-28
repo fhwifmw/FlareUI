@@ -1,3 +1,4 @@
+
 local function BuildFlareUI()
     local Players = game:GetService("Players")
     local UIS = game:GetService("UserInputService")
@@ -10,42 +11,18 @@ local function BuildFlareUI()
     local FlareUI = {}
     FlareUI.__index = FlareUI
 
-    local ASSET_VERSION = "v4"
+    local ASSET_VERSION = "v2"
     local ASSET_FOLDER = "FlareHub/assets"
 
     local AssetData = {
-
         flare_icon = "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",
+        search = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAB7UlEQVR42u2Xz0ocQRDGq2dEMRB0/Ucg5iaYQ7x70oORIPgCQkIeIbl6EH0LQd/CS0ICelMRxIsIuSqas7ribtjdXy7fmMrobpbd3iWgBc1MV9dMfVX9VU2P2ZM8dgmtPATcPRdCoCtIgQD0eOfSp0DSaedpbj6gkdSziek80XUMWAH2gEvgCjgG1oE3+a2J7fwdcMYfuQGu3bwMfNY2pVHTDrx1jr4Ci8AIUACmgQ23vhplOxRJAIaBC718uYH9grJSBWbaBuGiX5Hz747xPQ5gCvRqbS2zBZK2KsOV3KGims90D/FEY0TkLAPjnkMtNRlgUEQrAoVGLHdk3QZqwGyz25A0sV4zs0qT+Mvqrk1Hfs8whIAiLZnZuZn1m9mEdEmDjD0zsykzq5rZz2y5XRKui1ibmvfmul8A+nT/XrbHD7XsVhvQa+CXiLWQJ56bv1KjqgBLURqSy8InRXarUnvpbJ4DH4FT2ZwAQ9G+DS4Tq67bFYEd1fu50//Qdd9VTRIDREayOeALUOJvOQI+AC+AA+n2YoNI3f04MKMxmeNCQc47A6JBI0odZzoHwlVAmp2EPCjHmXog4p4X/kFcD2IXGM0+Yt0GsSsQ39SgUuuGOBCDwJaqKHT8AFvv+B71v6BFECGEUHv6Ffvv5DdNjQ/G698EvQAAAABJRU5ErkJggg==",
+        combat = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACgUlEQVR42tWXO2tUURSF1753kmCI+IwgmkYRJChYpPBFCh9IwMLKRkX9BWphYRHir1BIShvBwlJBEK0koCSoiK3xVRmMGtQkM5+F6+Jx0OjcmUl0w+HMPbNn7cfZe909UhMCBBD6nyWazECPpA5JHyNiYcm8BjLvN4FpYK+f80axsiZ9WSVpjbNQSpp1YEESXsviQDRbR1mZ1pNU8U5ynpfBqzRoPI+IqqQ5P1fsRM3n1USnbZW/ARgGHgBVvstz4CqwI8lSW4wfAV7yQz64DQv5Cpw3Q+atMp57P5QYug0cdTbWAbuB0eT7kbK88Euut5E3Br+0iP4QMOurGWzYCSCrW512YNjG7yTFJ6DDdCygy/vlQhfIrZPX4UajmXjoqA4nWRkAnjozZ5MAeoEZ18P6PxIJEBGBI7kmqcetlXmvSNovaVbS1oh4B3RLmpS0zTg1STsj4pkduSdpUNIjSe9NVgVjhqSLETEJZCkPdEk6toizVS+Z+3sNOC+p0++FQuZtaOA3WBsdQFQiomCzGUn7EnIq7imXNCapT9IWYCIiZoALkkZt/Iqkcd/tCkn9dvaEpLfOZi1x4HGSub+qgSsurLG6gusH9tSdnbTuk1I9X7eKCt4OzLmwhhb5fR8wZQdOJZ1UjxtliOicgT+71TYlOiuB08AL69wojLWaikcStvsE3AfuAq+T8+vA2pYPrAUYcBC4BXzhZ5kAztTrt/qllCefNwPjwDxwPMlSQ5E3NA9ERLVwIiJeAdPGmIqIGtAZEXNtnYg8bOCIi2G0y1E3PIiUngkjopaMZCSEtqRDac1r2abibmNUtJSStOQu4ACwum2t96//Oc2MUStbhN8AfTfMcaTnSRIAAAAASUVORK5CYII=",
+        visuals = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACvUlEQVR42u2WTUhUURTH/+fNjNTkiBlIKSFUhhlFlBUthMigFm3aRrlrVUTQVmhTy1YRZG2Cdn1JGLSoldIywqAM+gDTIJQi0QrCmV+b8+D6euN8QLiZA8Mb7j33nP8953/OPVJDGrLKYvUeBJadNTP+KwAgkhRJQhJmVkoBFLnNUnK/bgDu2MysmFgvuMM4AvNpgJLnqgaQNAB0SjoiqV/SNkl7JOU8IpI0KWlK0pik52b2LkxVTSkK8wvsBG4BP1kuv4BFX1/gX3kKDCQiWb1zIAdcA5bc4CLwCDgP9APtQAFoBjYAB4BB4DYwHQAZBTqqAhE4bwXG3cA8MOQpSOrngHUp6wUHM+k2ZoC9FUEAEdAEjPjBF0B3sJ8FDNgMDANfHOAIcCgGFei3uF4MotPPW+rt/bcR+AR8ANYHN834/iZgKsEFgD/AUdfPANnA9n0/s99tRJVSkAe6YmOJ7013+Bjo9ltd9bW3HkELImqekrVpDaxaTsTfZuCr37oLuAO8BtqAl0AJ6AsBr9Q9JSlbrv69myVrNyMpL2lJ0oKkg5J6JK2R9M37Sr5cM5NUqun2IWECDox6uK84X7YAJ4EiMOvEC89FtTpsAx4AT4K9TMCBPncG8Ap4FhDyXKAfxUQELgP3gK2VqiDyG7x3gzcCIxaXGHAcmAgcTwMX3HFTmH/grHMDYHelKoj82wvMBb1gIEU3693vMNCSst8L3A1Ani5HznIgtgNjgYFx4CKwL+4PKd2vBzgDPAzSNAMcK+fcyoEws5KH/JSkS5J2BSo/JE04q2N290jqCHTmJF2XNGxms0Cm0tOcGgn/3wSc8IfmjT9MSVkCPjvZBoH2kMR1DSRpQ4UDa5W0w/tCLB8lfTez3wnHpZVmAauhI0Y+WBQr6GbcbrGaIaTmoTSo4WQpxbNiXcNpQxqyavIXnUPA5P/wpI8AAAAASUVORK5CYII=",
+        movement = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACeklEQVR42uWWvWtUQRTFz7z3TEQtTIIKgqilYCHGxEZMjNiJf0UaGxstJCCCnQZsxf9CRPEbO2MSLCysRBsRxI/Efs3+bM7Ey7q72c3upsnAMjPv3rfnvrn3nLnSdh+pl5eB0st6SoktjRxI7fYDBc5gwFXgEjDmfbEV4KXX9/k3FoHRgQYRj7gBvOb5LTAykHT4ywtgD3DPgF+Az17/8LwA7Itp6lcA+dinDLQKHAceeH8ReOb1c6AKDOlbzgvPs8CM168NOgHsBB4D58OJlX05iWaFZYAXDuBcN5SNo2hHNYNMpZTqMR1AFZ9JWrN/5XeS/a4DB1JKdMyOFlSbbaiFnI58AmdDcNlnzrY3gR1FNyKTwVeAC/nL/YV5fmmfae932FYBR03NrBMbUzT8SQb/BBxr4/80F2EL+1A4pUXgUE7Rf5cRUKaU1oBrkuYl1SR9lfRB0i5Jaw2XGJJOShqV9E7Sanie66smaUzSCUmVpJsppVsZS37YOD4GkCP+bTTGN7D/8XwaqCStF3AMoO4iWZa0JGlS0jdJlyV9lzQUXiy8vmvwK5LeSyp9Usn27DMpaUXSnWBvzVdgxDnDeR5u4f/EPqda2G/b/ivXSSdMKEIQC/6DV8Cwi6p0oZYNLChtzz4ztv0O4FVXygfsBR42kdeyhQ4MNZHt6a7AO+1wHFAOYCqkr+hEyttKsSRZPqMkR3k96B4w33g1+880ke2iQbZ7uo7nQvOxG3jk/Tgw30y2+92QHLa24wJc9nopVPt6vQykJTM7ssbXQ0v2s2Oq9doXAKMhiNySTWyq2nsIYj9wwzQ9syXg7Si62WNPPQaxrv09U23bjr9trb9czLA2SQAAAABJRU5ErkJggg==",
+        client = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABvUlEQVR42u3WvWsUURQF8DvZWbEyUUHRNLYiNqIoElAsrCxEsLdIei0FC2vttBC0srC1sRDETrDwLwhY2iSiIpHgx5r8LLyDj7DixJ0kLOxt3nzc986Z8+49byImMc6BCtVOAPcwtYFIb7vAS+A9mCmJbAs4LuApPmAFr3BtS7elAF/wJ37gS3H/EFOlSp3teY7nEmgN1zGLvbiMpXx3s5zTZdFVeJYgN4bknMF3vMd0Z1vRLJIF9xmr2J+kGmL9zHmdBOfaqlBvgstURPQjYj0iBhGh5Jnjao79zgsQNd7kF14aknMwO+IbZjttS/STxNUswCXMZQHuw5FC/nvNnK0wnqNYLDrhY3rB13y2UqozcicU7XcYj7LK28RznM659ajgp/CuMJ7HuILjOIvzqcxF3MVy5g6w8F8kCtc7mRLDExxrMfcAbhdqzG/cylZHbJrJ21zkQfG+bk7Dwgua67rIm08VBjjRmkSzCG4l+IvCDXstP2BXXjdKvPzbGTGM0XqOhyLiU0TcyX6uqqpa+xeBqqpExM8Eux8RyxExHRG7f3PahDdgZtSTLdeoYyyjCyvdsf/GSUxiEmMTvwC9qZDCrvk0XwAAAABJRU5ErkJggg==",
+        settings = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAC2ElEQVR42tWXz2oUQRDGv5rMRtDE3c0foihEwZseAl5M/IOSm+AhLyB68C6e1PgCPoIivoCHQHKLIIIm6jF6UTwqKB6MxkRM1Pl5sJo0w8xudjYE0tDMdHp7qurrr+qrSLt5AAbYrg7Cuog+ldQv6beZre4YxECPPyeAr8CMr5MqNtKW8JgRHAnv0ahJakqqlzm/+RnLymwkbQ4L6DMzCiLE55+i82aGz6xVkEmJcQP2AY8kPQcaZpblnCCa8fnEHW4As8CkX2XS0b0DA8AS/8ci0IzIJ+CC7y0EwwE5oOlnAOaBNHBny074sw68CIaAUTeUuoNngRPucM33hiLji8BwpXoRIMtFczsPJVCL3z3iPGpWNQ2DEyPAzQj+SWAGWAZWgWfA1WhvDmhUSs+IA1ZEHuAam2MD+BGt75VlU7cFqcfv/bwb+gtcBw4526eAz743HcjqnMhPaxf9fidfPHt9f86N3Cgg7DiwDnwB6h3D7s8G8MFhXQG++/uEe78C/AQGgT3u0DvgiJ9/6Q6O++9ngcdOzHl/H4u5kXbgZyKp1yvfhq+PSzrqoiRJa1GJN0mXCr4zEguhFSDRn/u7+YeRtCDppKQpM5sDDktqmtkb4ICkt+7kMUmfJJ0uqLavzexbib60JKEBVxzij8CZaH/UUxHgYShWXUlwizS8H6XdK+AJsBatB+OewZ2Pp1UpRA0n3KSv7zgKYawBD4AB378FjHTTJ6iFsNSCTAOnPEMORuemC0px5Wo4nBOWIb/fWkGHFOAedeHChazecVWMKl+hsISK5nm+EggZaUWM2pIrZ6EiljEVSZmku5J+SbrsqZN4Y2LedPR52vZs+k5iZsvARUlPJb2XtO7pTDd6YAXknAcy4FzuOsJ+XzthSreQBcQNaklfSK6ZDSit5hvcTrvirA0we73SpUUddYh6yxWvQoqOeW/Y2Fb93xX/mkUcMUnZtsO8U+MfZCMOKiTdKGEAAAAASUVORK5CYII=",
     }
-
-
-    local LUCIDE_ICONS_URL =
-        "https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua"
-
-    local LucideIcons
-
-    do
-        local ok, result = pcall(function()
-            if type(loadstring) ~= "function" then
-                return nil
-            end
-
-            local source = game:HttpGet(LUCIDE_ICONS_URL)
-            local library = loadstring(source)()
-
-            if library and type(library.SetIconsType) == "function" then
-                pcall(function()
-                    library.SetIconsType("lucide")
-                end)
-            end
-
-            return library
-        end)
-
-        if ok then
-            LucideIcons = result
-        end
-    end
 
     local Theme = {
         Background = Color3.fromRGB(0, 0, 0),
@@ -264,9 +241,6 @@ local function BuildFlareUI()
     function FlareUI:CreateLoader(options)
         options = options or {}
 
-        local minimumDuration = math.max(tonumber(options.MinimumDuration) or 3, 0)
-        local startedAt = os.clock()
-
         local gui = makeScreenGui(options.Name or "FlareLoader")
         local group = new("CanvasGroup", {
             Size = UDim2.fromScale(1, 1),
@@ -397,61 +371,7 @@ local function BuildFlareUI()
             SpinTween = spinTween,
             PulseTween = pulseTween,
             Finished = false,
-            FinishRequested = false,
-            RequestedProgress = 0,
-            DisplayedProgress = 0,
-            StartedAt = startedAt,
-            MinimumDuration = minimumDuration,
         }
-
-        local function complete(self)
-            if self.Finished then return end
-            self.Finished = true
-            self.Status.Text = "READY"
-            self.DisplayedProgress = 1
-            self.Fill.Size = UDim2.new(1, 0, 1, 0)
-            tween(iconScale, {Scale = 1.12}, 0.14, Enum.EasingStyle.Quad)
-            task.delay(0.2, function()
-                pcall(function()
-                    self.SpinTween:Cancel()
-                    self.PulseTween:Cancel()
-                end)
-                tween(self.Group, {GroupTransparency = 1}, 0.28, Enum.EasingStyle.Quad)
-                task.delay(0.3, function()
-                    if self.Gui then
-                        self.Gui:Destroy()
-                    end
-                end)
-            end)
-        end
-
-        task.spawn(function()
-            while not loader.Finished and loader.Gui and loader.Gui.Parent do
-                local elapsed = os.clock() - loader.StartedAt
-                local timeAlpha
-
-                if loader.MinimumDuration <= 0 then
-                    timeAlpha = 1
-                else
-                    timeAlpha = math.clamp(elapsed / loader.MinimumDuration, 0, 1)
-                end
-
-                local eased = 1 - ((1 - timeAlpha) ^ 2.2)
-                local timedProgress = eased * 0.88
-                local requested = math.min(loader.RequestedProgress or 0, 0.92)
-                local target = math.max(timedProgress, requested)
-
-                if loader.FinishRequested and timeAlpha >= 1 then
-                    complete(loader)
-                    break
-                end
-
-                loader.DisplayedProgress = loader.DisplayedProgress + (target - loader.DisplayedProgress) * 0.16
-                loader.Fill.Size = UDim2.new(loader.DisplayedProgress, 0, 1, 0)
-
-                task.wait(1 / 30)
-            end
-        end)
 
         function loader:SetStage(text, progress)
             if self.Finished then return end
@@ -459,19 +379,29 @@ local function BuildFlareUI()
                 self.Status.Text = string.upper(tostring(text))
             end
             if progress ~= nil then
-                self.RequestedProgress = math.clamp(tonumber(progress) or 0, 0, 1)
+                local p = math.clamp(tonumber(progress) or 0, 0, 1)
+                tween(self.Fill, {Size = UDim2.new(p, 0, 1, 0)}, 0.18)
             end
         end
 
         function loader:Finish()
-            if self.Finished or self.FinishRequested then return end
-            self.FinishRequested = true
-            self.Status.Text = "FINALIZING"
-            self.RequestedProgress = math.max(self.RequestedProgress or 0, 0.92)
-
-            if os.clock() - self.StartedAt >= self.MinimumDuration then
-                complete(self)
-            end
+            if self.Finished then return end
+            self.Finished = true
+            self.Status.Text = "READY"
+            tween(self.Fill, {Size = UDim2.new(1, 0, 1, 0)}, 0.12)
+            tween(iconScale, {Scale = 1.12}, 0.12, Enum.EasingStyle.Quad)
+            task.delay(0.16, function()
+                pcall(function()
+                    self.SpinTween:Cancel()
+                    self.PulseTween:Cancel()
+                end)
+                tween(self.Group, {GroupTransparency = 1}, 0.22, Enum.EasingStyle.Quad)
+                task.delay(0.24, function()
+                    if self.Gui then
+                        self.Gui:Destroy()
+                    end
+                end)
+            end)
         end
 
         return loader
@@ -487,41 +417,23 @@ local function BuildFlareUI()
     SectionMethods.__index = SectionMethods
 
     local function createIcon(parent, name, size, tint)
-        size = size or 16
-
-        local iconData
-
-        if LucideIcons and type(LucideIcons.Icon2) == "function" then
-            local ok, result = pcall(
-                LucideIcons.Icon2,
-                name or "circle",
-                "lucide"
-            )
-
-            if ok then
-                iconData = result
-            end
-        end
-
-        if iconData and iconData[1] and iconData[2] then
+        local asset = resolveAsset(name)
+        if asset then
             return new("ImageLabel", {
-                Size = UDim2.fromOffset(size, size),
+                Size = UDim2.fromOffset(size or 16, size or 16),
                 BackgroundTransparency = 1,
-                Image = iconData[1],
-                ImageRectSize = iconData[2].ImageRectSize,
-                ImageRectOffset = iconData[2].ImageRectPosition,
+                Image = asset,
                 ImageColor3 = tint or Theme.Muted,
                 ScaleType = Enum.ScaleType.Fit,
             }, parent)
         end
 
-
         return new("TextLabel", {
-            Size = UDim2.fromOffset(size, size),
+            Size = UDim2.fromOffset(size or 16, size or 16),
             BackgroundTransparency = 1,
-            Text = "·",
+            Text = string.upper(string.sub(name or "?", 1, 1)),
             Font = Enum.Font.GothamBold,
-            TextSize = math.max(10, size),
+            TextSize = 10,
             TextColor3 = tint or Theme.Muted,
         }, parent)
     end
@@ -563,7 +475,7 @@ local function BuildFlareUI()
 
         new("TextLabel", {
             Position = UDim2.fromOffset(25, 0),
-            Size = UDim2.new(1, -112, 1, 0),
+            Size = UDim2.new(1, -40, 1, 0),
             BackgroundTransparency = 1,
             Text = options.Title or "FLARE HUB",
             Font = Enum.Font.GothamBold,
@@ -571,36 +483,6 @@ local function BuildFlareUI()
             TextColor3 = Theme.Text,
             TextXAlignment = Enum.TextXAlignment.Left,
         }, header)
-
-        local minimizeButton = new("TextButton", {
-            AnchorPoint = Vector2.new(1, 0.5),
-            Position = UDim2.new(1, -47, 0.5, 0),
-            Size = UDim2.fromOffset(30, 28),
-            BackgroundColor3 = Theme.Background,
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Text = "",
-            AutoButtonColor = false,
-        }, header)
-
-        local minimizeIcon = createIcon(minimizeButton, "minus", 15, Theme.Muted)
-        minimizeIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-        minimizeIcon.Position = UDim2.fromScale(0.5, 0.5)
-
-        local closeButton = new("TextButton", {
-            AnchorPoint = Vector2.new(1, 0.5),
-            Position = UDim2.new(1, -13, 0.5, 0),
-            Size = UDim2.fromOffset(30, 28),
-            BackgroundColor3 = Theme.Background,
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Text = "",
-            AutoButtonColor = false,
-        }, header)
-
-        local closeIcon = createIcon(closeButton, "x", 15, Theme.Muted)
-        closeIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-        closeIcon.Position = UDim2.fromScale(0.5, 0.5)
 
         new("Frame", {
             Position = UDim2.new(0, 10, 1, -1),
@@ -650,87 +532,17 @@ local function BuildFlareUI()
             TextXAlignment = Enum.TextXAlignment.Left,
         }, searchFrame)
 
-        local navContainer = new("ScrollingFrame", {
+        local navContainer = new("Frame", {
             Position = UDim2.fromOffset(8, 50),
-            Size = UDim2.new(1, -16, 1, -154),
+            Size = UDim2.new(1, -16, 1, -58),
             BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            CanvasSize = UDim2.fromOffset(0, 0),
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            ScrollBarThickness = 2,
-            ScrollBarImageColor3 = Theme.Accent,
-            VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
-            ScrollingDirection = Enum.ScrollingDirection.Y,
         }, sidebar)
-
-        new("UIPadding", {
-            PaddingRight = UDim.new(0, 4),
-            PaddingBottom = UDim.new(0, 3),
-        }, navContainer)
 
         new("UIListLayout", {
             FillDirection = Enum.FillDirection.Vertical,
             SortOrder = Enum.SortOrder.LayoutOrder,
             Padding = UDim.new(0, 6),
         }, navContainer)
-
-        local profile = new("Frame", {
-            Position = UDim2.new(0, 8, 1, -96),
-            Size = UDim2.new(1, -16, 0, 88),
-            BackgroundColor3 = Theme.Background,
-            BorderSizePixel = 0,
-        }, sidebar)
-
-        new("Frame", {
-            Size = UDim2.new(1, 0, 0, 1),
-            BackgroundColor3 = Color3.fromRGB(100, 100, 100),
-            BorderSizePixel = 0,
-        }, profile)
-
-        local avatar = new("ImageLabel", {
-            Position = UDim2.fromOffset(12, 14),
-            Size = UDim2.fromOffset(38, 38),
-            BackgroundColor3 = Theme.Row,
-            BorderSizePixel = 0,
-            Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(LocalPlayer.UserId) .. "&w=150&h=150",
-            ScaleType = Enum.ScaleType.Crop,
-        }, profile)
-        stroke(avatar, Color3.fromRGB(120, 120, 120), 1)
-
-        new("TextLabel", {
-            Position = UDim2.fromOffset(59, 11),
-            Size = UDim2.new(1, -61, 0, 19),
-            BackgroundTransparency = 1,
-            Text = LocalPlayer.DisplayName,
-            Font = Enum.Font.GothamBold,
-            TextSize = 10,
-            TextColor3 = Theme.Text,
-            TextTruncate = Enum.TextTruncate.AtEnd,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, profile)
-
-        new("TextLabel", {
-            Position = UDim2.fromOffset(59, 29),
-            Size = UDim2.new(1, -61, 0, 17),
-            BackgroundTransparency = 1,
-            Text = "@" .. LocalPlayer.Name,
-            Font = Enum.Font.GothamMedium,
-            TextSize = 9,
-            TextColor3 = Theme.Muted,
-            TextTruncate = Enum.TextTruncate.AtEnd,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, profile)
-
-        new("TextLabel", {
-            Position = UDim2.fromOffset(12, 59),
-            Size = UDim2.new(1, -14, 0, 20),
-            BackgroundTransparency = 1,
-            Text = options.KeyStatusText or "Key expires: Never",
-            Font = Enum.Font.GothamMedium,
-            TextSize = 9,
-            TextColor3 = Theme.Muted,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, profile)
 
         local content = new("Frame", {
             Position = UDim2.fromOffset(sidebarWidth, 48),
@@ -782,11 +594,6 @@ local function BuildFlareUI()
             Content = content,
             SearchBox = searchBox,
             SearchFrame = searchFrame,
-            Profile = profile,
-            MinimizeButton = minimizeButton,
-            CloseButton = closeButton,
-            MinimizeCallback = options.OnMinimize,
-            CloseCallback = options.OnClose,
             Tabs = {},
             TabOrder = {},
             Entries = {},
@@ -799,7 +606,6 @@ local function BuildFlareUI()
             HUDContent = hudContent,
             HUDItems = {},
             ActiveSliderDrag = nil,
-            ActiveSliderRelease = nil,
             Visible = true,
             Destroyed = false,
         }, WindowMethods)
@@ -826,7 +632,19 @@ local function BuildFlareUI()
                     startPos.Y.Offset + delta.Y
                 )
             end
+        end))
 
+        table.insert(window.Connections, UIS.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end))
+
+        table.insert(window.Connections, searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+            window:SetSearch(searchBox.Text)
+        end))
+
+        table.insert(window.Connections, UIS.InputChanged:Connect(function(input)
             if window.ActiveSliderDrag
                 and input.UserInputType == Enum.UserInputType.MouseMovement
             then
@@ -836,52 +654,7 @@ local function BuildFlareUI()
 
         table.insert(window.Connections, UIS.InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false
-            end
-        end))
-
-        local function bindHeaderButton(button, icon, hoverColor, callbackName)
-            table.insert(window.Connections, button.MouseEnter:Connect(function()
-                if window.Destroyed then return end
-                tween(button, {BackgroundTransparency = 0, BackgroundColor3 = hoverColor}, 0.10)
-                if icon:IsA("ImageLabel") or icon:IsA("ImageButton") then
-                    icon.ImageColor3 = Theme.Text
-                end
-            end))
-
-            table.insert(window.Connections, button.MouseLeave:Connect(function()
-                if window.Destroyed then return end
-                tween(button, {BackgroundTransparency = 1}, 0.10)
-                if icon:IsA("ImageLabel") or icon:IsA("ImageButton") then
-                    icon.ImageColor3 = Theme.Muted
-                end
-            end))
-
-            table.insert(window.Connections, button.MouseButton1Click:Connect(function()
-                if window.Destroyed then return end
-                local callback = window[callbackName]
-                if type(callback) == "function" then
-                    callback()
-                elseif callbackName == "MinimizeCallback" then
-                    window:SetVisible(false)
-                end
-            end))
-        end
-
-        bindHeaderButton(minimizeButton, minimizeIcon, Theme.RowHover, "MinimizeCallback")
-        bindHeaderButton(closeButton, closeIcon, Color3.fromRGB(62, 18, 28), "CloseCallback")
-
-        table.insert(window.Connections, searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-            window:SetSearch(searchBox.Text)
-        end))
-
-        table.insert(window.Connections, UIS.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                if window.ActiveSliderRelease then
-                    window.ActiveSliderRelease()
-                else
-                    window.ActiveSliderDrag = nil
-                end
+                window.ActiveSliderDrag = nil
             end
         end))
 
@@ -900,14 +673,6 @@ local function BuildFlareUI()
 
     function WindowMethods:_registerSection(section)
         table.insert(self.Sections, section)
-    end
-
-    function WindowMethods:SetMinimizeCallback(callback)
-        self.MinimizeCallback = callback
-    end
-
-    function WindowMethods:SetCloseCallback(callback)
-        self.CloseCallback = callback
     end
 
     function WindowMethods:AddTab(options)
@@ -962,15 +727,6 @@ local function BuildFlareUI()
             Visible = false,
         }, button)
 
-        local pageGroup = new("CanvasGroup", {
-            Name = name .. "PageGroup",
-            Position = UDim2.fromOffset(0, 0),
-            Size = UDim2.fromScale(1, 1),
-            BackgroundTransparency = 1,
-            GroupTransparency = 1,
-            Visible = false,
-        }, self.Content)
-
         local page = new("ScrollingFrame", {
             Name = name,
             Position = UDim2.fromOffset(8, 8),
@@ -983,8 +739,8 @@ local function BuildFlareUI()
             ScrollBarImageColor3 = Theme.Accent,
             VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
             ScrollingDirection = Enum.ScrollingDirection.Y,
-            Visible = true,
-        }, pageGroup)
+            Visible = false,
+        }, self.Content)
 
         new("UIPadding", {
             PaddingLeft = UDim.new(0, 5),
@@ -1009,7 +765,6 @@ local function BuildFlareUI()
             Label = label,
             Count = count,
             Page = page,
-            PageGroup = pageGroup,
             Sections = {},
             MatchCount = 0,
         }, TabMethods)
@@ -1036,12 +791,11 @@ local function BuildFlareUI()
             return
         end
 
-        local previousName = self.CurrentTab
-        local previous = previousName and self.Tabs[previousName] or nil
         self.CurrentTab = name
 
         for _, item in ipairs(self.TabOrder) do
             local selected = item == tab
+            item.Page.Visible = selected
             item.Indicator.Visible = selected
             item.Label.TextColor3 = selected and Theme.Text or Theme.Muted
             if item.Icon:IsA("ImageLabel") or item.Icon:IsA("ImageButton") then
@@ -1051,34 +805,6 @@ local function BuildFlareUI()
             end
             item.Button.BackgroundColor3 = selected and Theme.Row or Theme.Background
         end
-
-        if previous == tab and tab.PageGroup.Visible then
-            return
-        end
-
-        if previous and previous ~= tab then
-            local oldGroup = previous.PageGroup
-            tween(oldGroup, {
-                GroupTransparency = 1,
-                Position = UDim2.fromOffset(-8, 0),
-            }, 0.10, Enum.EasingStyle.Quad)
-
-            task.delay(0.105, function()
-                if not self.Destroyed and self.CurrentTab ~= previous.Name then
-                    oldGroup.Visible = false
-                    oldGroup.Position = UDim2.fromOffset(0, 0)
-                end
-            end)
-        end
-
-        local group = tab.PageGroup
-        group.Visible = true
-        group.GroupTransparency = 1
-        group.Position = UDim2.fromOffset(12, 0)
-        tween(group, {
-            GroupTransparency = 0,
-            Position = UDim2.fromOffset(0, 0),
-        }, 0.14, Enum.EasingStyle.Quart)
     end
 
     function WindowMethods:_firstVisibleTab()
@@ -1146,7 +872,7 @@ local function BuildFlareUI()
                     self:SelectTab(first.Name)
                 else
                     for _, tab in ipairs(self.TabOrder) do
-                        tab.PageGroup.Visible = false
+                        tab.Page.Visible = false
                     end
                 end
             else
@@ -1245,117 +971,6 @@ local function BuildFlareUI()
                 toast:Destroy()
             end
         end)
-    end
-
-    function WindowMethods:Confirm(options)
-        if self.Destroyed then return end
-        options = options or {}
-
-        local shade = new("TextButton", {
-            Size = UDim2.fromScale(1, 1),
-            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-            BackgroundTransparency = 0.28,
-            BorderSizePixel = 0,
-            Text = "",
-            AutoButtonColor = false,
-            ZIndex = 90,
-        }, self.Gui)
-
-        local box = new("CanvasGroup", {
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            Position = UDim2.fromScale(0.5, 0.52),
-            Size = UDim2.fromOffset(360, 174),
-            BackgroundColor3 = Theme.Background,
-            BorderSizePixel = 0,
-            GroupTransparency = 1,
-            ZIndex = 91,
-        }, shade)
-        stroke(box, options.Danger and Theme.Danger or Theme.Border, 1)
-
-        local alertIcon = createIcon(box, options.Danger and "triangle-alert" or "circle-help", 20, options.Danger and Theme.Danger or Theme.Accent)
-        alertIcon.Position = UDim2.fromOffset(18, 18)
-        alertIcon.ZIndex = 92
-
-        new("TextLabel", {
-            Position = UDim2.fromOffset(49, 13),
-            Size = UDim2.new(1, -67, 0, 28),
-            BackgroundTransparency = 1,
-            Text = options.Title or "Are you sure?",
-            Font = Enum.Font.GothamBold,
-            TextSize = 12,
-            TextColor3 = Theme.Text,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            ZIndex = 92,
-        }, box)
-
-        new("TextLabel", {
-            Position = UDim2.fromOffset(18, 48),
-            Size = UDim2.new(1, -36, 0, 62),
-            BackgroundTransparency = 1,
-            Text = options.Text or "This action cannot be undone.",
-            Font = Enum.Font.GothamMedium,
-            TextSize = 10,
-            TextColor3 = Theme.Muted,
-            TextWrapped = true,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.TextYAlignment.Top,
-            ZIndex = 92,
-        }, box)
-
-        local cancel = new("TextButton", {
-            Position = UDim2.new(0, 18, 1, -47),
-            Size = UDim2.new(0.5, -23, 0, 30),
-            BackgroundColor3 = Theme.Row,
-            BorderSizePixel = 0,
-            Text = options.CancelText or "CANCEL",
-            Font = Enum.Font.GothamBold,
-            TextSize = 9,
-            TextColor3 = Theme.Text,
-            AutoButtonColor = false,
-            ZIndex = 92,
-        }, box)
-        stroke(cancel, Color3.fromRGB(110, 110, 110), 1)
-
-        local confirm = new("TextButton", {
-            AnchorPoint = Vector2.new(1, 0),
-            Position = UDim2.new(1, -18, 1, -47),
-            Size = UDim2.new(0.5, -23, 0, 30),
-            BackgroundColor3 = options.Danger and Color3.fromRGB(55, 13, 22) or Theme.AccentDim,
-            BorderSizePixel = 0,
-            Text = options.ConfirmText or "CONFIRM",
-            Font = Enum.Font.GothamBold,
-            TextSize = 9,
-            TextColor3 = options.Danger and Color3.fromRGB(255, 140, 155) or Theme.Text,
-            AutoButtonColor = false,
-            ZIndex = 92,
-        }, box)
-        stroke(confirm, options.Danger and Theme.Danger or Theme.Accent, 1)
-
-        local closed = false
-        local function closeModal()
-            if closed then return end
-            closed = true
-            if shade.Parent then
-                shade:Destroy()
-            end
-        end
-
-        cancel.MouseButton1Click:Connect(closeModal)
-        confirm.MouseButton1Click:Connect(function()
-            if closed then return end
-            local callback = options.Callback
-            closeModal()
-            if type(callback) == "function" then
-                task.spawn(callback)
-            end
-        end)
-
-        tween(box, {
-            GroupTransparency = 0,
-            Position = UDim2.fromScale(0.5, 0.5),
-        }, 0.14, Enum.EasingStyle.Quart)
-
-        return shade
     end
 
     function WindowMethods:Destroy()
@@ -1499,7 +1114,7 @@ local function BuildFlareUI()
             AutoButtonColor = false,
         }, row)
 
-        local buttonStroke = stroke(button, Color3.fromRGB(75, 75, 75), 1)
+        stroke(button, Color3.fromRGB(75, 75, 75), 1)
 
         local knob = new("Frame", {
             Position = UDim2.fromOffset(3, 3),
@@ -1508,39 +1123,12 @@ local function BuildFlareUI()
             BorderSizePixel = 0,
         }, button)
 
-        local knobScale = new("UIScale", {Scale = 1}, knob)
-        local buttonScale = new("UIScale", {Scale = 1}, button)
         local control = {}
-        local renderToken = 0
 
-        local function render(animated)
-            renderToken = renderToken + 1
-            local token = renderToken
-            local buttonColor = value and Theme.AccentDim or Color3.fromRGB(18, 18, 18)
-            local knobColor = value and Theme.Accent or Theme.Muted
-            local knobPosition = value and UDim2.fromOffset(23, 3) or UDim2.fromOffset(3, 3)
-            local strokeColor = value and Theme.Accent or Color3.fromRGB(75, 75, 75)
-
-            if animated then
-                tween(button, {BackgroundColor3 = buttonColor}, 0.22, Enum.EasingStyle.Sine)
-                tween(buttonStroke, {Color = strokeColor}, 0.22, Enum.EasingStyle.Sine)
-                tween(knob, {BackgroundColor3 = knobColor, Position = knobPosition}, 0.26, Enum.EasingStyle.Quint)
-                tween(knobScale, {Scale = 0.72}, 0.08, Enum.EasingStyle.Quad)
-                tween(buttonScale, {Scale = 0.96}, 0.08, Enum.EasingStyle.Quad)
-                task.delay(0.08, function()
-                    if token == renderToken and knobScale and knobScale.Parent then
-                        tween(knobScale, {Scale = 1}, 0.18, Enum.EasingStyle.Back)
-                        tween(buttonScale, {Scale = 1}, 0.18, Enum.EasingStyle.Back)
-                    end
-                end)
-            else
-                button.BackgroundColor3 = buttonColor
-                buttonStroke.Color = strokeColor
-                knob.BackgroundColor3 = knobColor
-                knob.Position = knobPosition
-                knobScale.Scale = 1
-                buttonScale.Scale = 1
-            end
+        local function render()
+            button.BackgroundColor3 = value and Theme.AccentDim or Color3.fromRGB(18, 18, 18)
+            knob.BackgroundColor3 = value and Theme.Accent or Theme.Muted
+            knob.Position = value and UDim2.fromOffset(23, 3) or UDim2.fromOffset(3, 3)
         end
 
         function control:Get()
@@ -1550,12 +1138,12 @@ local function BuildFlareUI()
         function control:Set(nextValue, silent)
             nextValue = nextValue == true
             if value == nextValue and not silent then
-                render(true)
+                render()
                 return
             end
 
             value = nextValue
-            render(not silent)
+            render()
 
             if not silent and options.Callback then
                 task.spawn(options.Callback, value)
@@ -1566,7 +1154,7 @@ local function BuildFlareUI()
             control:Set(not value)
         end)
 
-        render(false)
+        render()
 
         if options.Callback and options.FireOnCreate then
             task.spawn(options.Callback, value)
@@ -1625,7 +1213,6 @@ local function BuildFlareUI()
 
         local dragging = false
         local control = {}
-        local dragInput = nil
 
         local function quantize(n)
             n = math.clamp(n, minimum, maximum)
@@ -1677,64 +1264,25 @@ local function BuildFlareUI()
             control:Set(minimum + (maximum - minimum) * alpha)
         end
 
-        local hitbox = new("TextButton", {
-            Position = UDim2.new(0, 7, 1, -31),
-            Size = UDim2.new(1, -14, 0, 31),
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Text = "",
-            AutoButtonColor = false,
-            Active = true,
-            ZIndex = 8,
-        }, row)
-
-        local function endDrag()
-            if not dragging then return end
-            dragging = false
-            dragInput = nil
-            if self.Window.ActiveSliderDrag == setFromX then
-                self.Window.ActiveSliderDrag = nil
-            end
-            if self.Window.ActiveSliderRelease == endDrag then
-                self.Window.ActiveSliderRelease = nil
-            end
-            tween(knob, {Size = UDim2.fromOffset(7, 11)}, 0.12, Enum.EasingStyle.Quad)
-        end
-
-        local function beginDrag(x, input)
-            dragging = true
-            dragInput = input
-            self.Window.ActiveSliderDrag = setFromX
-            self.Window.ActiveSliderRelease = endDrag
-            setFromX(x)
-            tween(knob, {Size = UDim2.fromOffset(9, 15)}, 0.10, Enum.EasingStyle.Quad)
-        end
-
-        hitbox.InputBegan:Connect(function(input)
+        row.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                beginDrag(input.Position.X, input)
-            elseif input.UserInputType == Enum.UserInputType.Touch then
-                beginDrag(input.Position.X, input)
+                local y = input.Position.Y
+                if y >= rail.AbsolutePosition.Y - 8
+                    and y <= rail.AbsolutePosition.Y + rail.AbsoluteSize.Y + 8
+                then
+                    dragging = true
+                    section.Window.ActiveSliderDrag = setFromX
+                    setFromX(input.Position.X)
+                end
             end
         end)
 
-        hitbox.InputChanged:Connect(function(input)
-            if dragging
-                and input.UserInputType == Enum.UserInputType.Touch
-                and dragInput == input
-            then
-                setFromX(input.Position.X)
-            end
-        end)
-
-        hitbox.InputEnded:Connect(function(input)
-            if dragging
-                and (
-                    input.UserInputType == Enum.UserInputType.MouseButton1
-                    or input.UserInputType == Enum.UserInputType.Touch
-                )
-            then
-                endDrag()
+        row.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+                if section.Window.ActiveSliderDrag == setFromX then
+                    section.Window.ActiveSliderDrag = nil
+                end
             end
         end)
 
