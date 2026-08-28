@@ -2024,7 +2024,7 @@ local function BuildFlareUI()
         return control
     end
 
-    function SectionMethods:AddCycle(options)
+    function SectionMethods:AddDropdown(options)
         options = options or {}
         local values = options.Values or {}
         local index = 1
@@ -2049,25 +2049,97 @@ local function BuildFlareUI()
         local button = new("TextButton", {
             AnchorPoint = Vector2.new(1, 0.5),
             Position = UDim2.new(1, -12, 0.5, 0),
-            Size = UDim2.fromOffset(116, 26),
+            Size = UDim2.fromOffset(132, 26),
             BackgroundColor3 = Color3.fromRGB(12, 12, 12),
             BorderSizePixel = 0,
             Font = Enum.Font.GothamMedium,
             TextSize = 10,
             TextColor3 = Theme.Text,
             TextStrokeTransparency = 1,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Text = "",
             AutoButtonColor = false,
         }, row)
-        stroke(button, Theme.Border, 1)
+        local buttonStroke = stroke(button, Theme.Border, 1)
+
+        local valueLabel = new("TextLabel", {
+            Position = UDim2.fromOffset(10, 0),
+            Size = UDim2.new(1, -36, 1, 0),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Font = Enum.Font.GothamMedium,
+            TextSize = 10,
+            TextColor3 = Theme.Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextTruncate = Enum.TextTruncate.AtEnd,
+            ZIndex = 3,
+        }, button)
+
+        local chevron = createIcon(button, "chevron-down", 13, Theme.Muted)
+        chevron.AnchorPoint = Vector2.new(0.5, 0.5)
+        chevron.Position = UDim2.new(1, -13, 0.5, 0)
+        chevron.ZIndex = 3
 
         local control = {}
+        local popup
+        local outsideConnection
+        local followConnection
+        local opened = false
 
         local function current()
             return values[index]
         end
 
         local function render()
-            button.Text = tostring(current() or "None")
+            valueLabel.Text = tostring(current() or "None")
+        end
+
+        local function pointInside(guiObject, point)
+            if not guiObject or not guiObject.Parent then return false end
+            local pos = guiObject.AbsolutePosition
+            local size = guiObject.AbsoluteSize
+            return point.X >= pos.X and point.X <= pos.X + size.X
+                and point.Y >= pos.Y and point.Y <= pos.Y + size.Y
+        end
+
+        local function closeDropdown()
+            if not opened then return end
+            opened = false
+
+            if self.Window.ActiveDropdown == control then
+                self.Window.ActiveDropdown = nil
+            end
+
+            if outsideConnection then
+                outsideConnection:Disconnect()
+                outsideConnection = nil
+            end
+
+            if followConnection then
+                followConnection:Disconnect()
+                followConnection = nil
+            end
+
+            tween(buttonStroke, {Color = Theme.Border}, 0.12, Enum.EasingStyle.Quad)
+            tween(chevron, {Rotation = 0, ImageColor3 = Theme.Muted}, 0.14, Enum.EasingStyle.Quad)
+
+            if popup then
+                local oldPopup = popup
+                popup = nil
+                tween(oldPopup, {BackgroundTransparency = 1}, 0.10, Enum.EasingStyle.Quad)
+                for _, child in ipairs(oldPopup:GetChildren()) do
+                    if child:IsA("TextButton") then
+                        tween(child, {TextTransparency = 1, BackgroundTransparency = 1}, 0.10, Enum.EasingStyle.Quad)
+                    elseif child:IsA("UIStroke") then
+                        tween(child, {Transparency = 1}, 0.10, Enum.EasingStyle.Quad)
+                    end
+                end
+                task.delay(0.11, function()
+                    if oldPopup and oldPopup.Parent then
+                        oldPopup:Destroy()
+                    end
+                end)
+            end
         end
 
         function control:Get()
@@ -2087,18 +2159,189 @@ local function BuildFlareUI()
             end
         end
 
-        button.MouseButton1Click:Connect(function()
-            if #values == 0 then return end
-            index = index % #values + 1
+        function control:SetValues(nextValues, preserveSelection)
+            local previous = current()
+            values = type(nextValues) == "table" and nextValues or {}
+            index = 1
+
+            if preserveSelection ~= false and previous ~= nil then
+                for i, candidate in ipairs(values) do
+                    if candidate == previous then
+                        index = i
+                        break
+                    end
+                end
+            elseif options.Default ~= nil then
+                for i, candidate in ipairs(values) do
+                    if candidate == options.Default then
+                        index = i
+                        break
+                    end
+                end
+            end
+
+            closeDropdown()
             render()
-            if options.Callback then
-                task.spawn(options.Callback, current())
+        end
+
+        function control:Close()
+            closeDropdown()
+        end
+
+        local function openDropdown()
+            if opened or #values == 0 then return end
+
+            if self.Window.ActiveDropdown and self.Window.ActiveDropdown ~= control then
+                pcall(function()
+                    self.Window.ActiveDropdown:Close()
+                end)
+            end
+
+            opened = true
+            self.Window.ActiveDropdown = control
+            tween(buttonStroke, {Color = Theme.Accent}, 0.12, Enum.EasingStyle.Quad)
+            tween(chevron, {Rotation = 180, ImageColor3 = Theme.Accent}, 0.14, Enum.EasingStyle.Quad)
+
+            local visibleCount = math.min(#values, tonumber(options.MaxVisible) or 6)
+            local itemHeight = 28
+            local popupHeight = visibleCount * itemHeight + 8
+
+            popup = new("ScrollingFrame", {
+                Size = UDim2.fromOffset(button.AbsoluteSize.X, popupHeight),
+                BackgroundColor3 = Color3.fromRGB(7, 7, 7),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                CanvasSize = UDim2.fromOffset(0, #values * itemHeight + 8),
+                AutomaticCanvasSize = Enum.AutomaticSize.None,
+                ScrollBarThickness = #values > visibleCount and 2 or 0,
+                ScrollBarImageColor3 = Theme.Accent,
+                ScrollingDirection = Enum.ScrollingDirection.Y,
+                ZIndex = 120,
+                ClipsDescendants = true,
+            }, self.Window.Gui)
+            local popupStroke = stroke(popup, Theme.Border, 1)
+            popupStroke.Transparency = 1
+
+            new("UIPadding", {
+                PaddingTop = UDim.new(0, 4),
+                PaddingBottom = UDim.new(0, 4),
+                PaddingLeft = UDim.new(0, 4),
+                PaddingRight = UDim.new(0, 4),
+            }, popup)
+
+            local layout = new("UIListLayout", {
+                FillDirection = Enum.FillDirection.Vertical,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 0),
+            }, popup)
+            layout.Parent = popup
+
+            local function updatePosition()
+                if not popup or not popup.Parent or not row.Parent or not row.Visible or not self.Tab.Page.Visible then
+                    closeDropdown()
+                    return
+                end
+
+                local bPos = button.AbsolutePosition
+                local bSize = button.AbsoluteSize
+                local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1920, 1080)
+                local belowY = bPos.Y + bSize.Y + 5
+                local aboveY = bPos.Y - popupHeight - 5
+                local y = belowY + popupHeight <= viewport.Y - 6 and belowY or math.max(6, aboveY)
+                popup.Position = UDim2.fromOffset(bPos.X, y)
+                popup.Size = UDim2.fromOffset(bSize.X, popupHeight)
+            end
+
+            for i, candidate in ipairs(values) do
+                local item = new("TextButton", {
+                    Size = UDim2.new(1, 0, 0, itemHeight),
+                    BackgroundColor3 = i == index and Color3.fromRGB(245, 245, 245) or Color3.fromRGB(7, 7, 7),
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    Font = Enum.Font.GothamMedium,
+                    TextSize = 10,
+                    Text = tostring(candidate),
+                    TextColor3 = i == index and Color3.fromRGB(0, 0, 0) or Theme.Text,
+                    TextTransparency = 1,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    AutoButtonColor = false,
+                    ZIndex = 121,
+                    LayoutOrder = i,
+                }, popup)
+
+                new("UIPadding", {
+                    PaddingLeft = UDim.new(0, 8),
+                    PaddingRight = UDim.new(0, 8),
+                }, item)
+
+                item.MouseEnter:Connect(function()
+                    if i ~= index then
+                        tween(item, {BackgroundTransparency = 0, BackgroundColor3 = Color3.fromRGB(17, 17, 17)}, 0.10, Enum.EasingStyle.Quad)
+                    end
+                end)
+
+                item.MouseLeave:Connect(function()
+                    if i ~= index then
+                        tween(item, {BackgroundTransparency = 1, BackgroundColor3 = Color3.fromRGB(7, 7, 7)}, 0.10, Enum.EasingStyle.Quad)
+                    end
+                end)
+
+                item.MouseButton1Click:Connect(function()
+                    index = i
+                    render()
+                    closeDropdown()
+                    if options.Callback then
+                        task.spawn(options.Callback, current())
+                    end
+                end)
+            end
+
+            updatePosition()
+            tween(popup, {BackgroundTransparency = 0}, 0.12, Enum.EasingStyle.Quad)
+            tween(popupStroke, {Transparency = 0}, 0.12, Enum.EasingStyle.Quad)
+
+            for _, child in ipairs(popup:GetChildren()) do
+                if child:IsA("TextButton") then
+                    local selected = child.LayoutOrder == index
+                    tween(child, {
+                        TextTransparency = 0,
+                        BackgroundTransparency = selected and 0 or 1,
+                    }, 0.12, Enum.EasingStyle.Quad)
+                end
+            end
+
+            followConnection = RunService.RenderStepped:Connect(updatePosition)
+
+            task.defer(function()
+                outsideConnection = UIS.InputBegan:Connect(function(input)
+                    if not opened then return end
+                    if input.UserInputType ~= Enum.UserInputType.MouseButton1
+                        and input.UserInputType ~= Enum.UserInputType.Touch
+                    then
+                        return
+                    end
+
+                    local point = input.Position
+                    if not pointInside(button, point) and not pointInside(popup, point) then
+                        closeDropdown()
+                    end
+                end)
+            end)
+        end
+
+        button.MouseButton1Click:Connect(function()
+            if opened then
+                closeDropdown()
+            else
+                openDropdown()
             end
         end)
 
         render()
         return control
     end
+
+    SectionMethods.AddCycle = SectionMethods.AddDropdown
 
     function SectionMethods:AddInput(options)
         options = options or {}
@@ -2164,7 +2407,7 @@ local function BuildFlareUI()
     function SectionMethods:AddButton(options)
         options = options or {}
 
-        local row = makeRow(
+        local row, titleLabel = makeRow(
             self,
             40,
             options.Name or "Action",
@@ -2172,23 +2415,70 @@ local function BuildFlareUI()
             options.Keywords
         )
 
+        if titleLabel then
+            titleLabel:Destroy()
+        end
+
+        row.BackgroundColor3 = Theme.Background
+
+        local danger = options.Danger == true
+        local normalColor = Color3.fromRGB(245, 245, 245)
+        local hoverColor = Color3.fromRGB(225, 225, 225)
+        local pressColor = Color3.fromRGB(205, 205, 205)
+        local dangerColor = Color3.fromRGB(48, 10, 16)
+        local dangerHover = Color3.fromRGB(64, 12, 20)
+        local dangerPress = Color3.fromRGB(78, 14, 24)
+
         local button = new("TextButton", {
-            AnchorPoint = Vector2.new(1, 0.5),
-            Position = UDim2.new(1, -12, 0.5, 0),
-            Size = UDim2.fromOffset(92, 26),
-            BackgroundColor3 = options.Danger and Color3.fromRGB(48, 10, 16) or Color3.fromRGB(12, 12, 12),
+            Position = UDim2.fromOffset(2, 2),
+            Size = UDim2.new(1, -4, 1, -4),
+            BackgroundColor3 = danger and dangerColor or normalColor,
             BorderSizePixel = 0,
             Font = Enum.Font.GothamBold,
-            TextSize = 9,
-            TextColor3 = options.Danger and Theme.Danger or Theme.Text,
+            TextSize = 10,
+            TextColor3 = danger and Theme.Danger or Color3.fromRGB(0, 0, 0),
             TextStrokeTransparency = 1,
-            Text = string.upper(options.ButtonText or "RUN"),
+            Text = tostring(options.ButtonText or options.Name or "Action"),
+            TextXAlignment = Enum.TextXAlignment.Center,
+            TextYAlignment = Enum.TextYAlignment.Center,
             AutoButtonColor = false,
         }, row)
 
-        stroke(button, options.Danger and Theme.Danger or Theme.Border, 1)
+        local buttonScale = new("UIScale", {Scale = 1}, button)
+        local pressed = false
+
+        button.MouseEnter:Connect(function()
+            if not pressed then
+                tween(button, {BackgroundColor3 = danger and dangerHover or hoverColor}, 0.10, Enum.EasingStyle.Quad)
+            end
+        end)
+
+        button.MouseLeave:Connect(function()
+            pressed = false
+            tween(buttonScale, {Scale = 1}, 0.12, Enum.EasingStyle.Back)
+            tween(button, {BackgroundColor3 = danger and dangerColor or normalColor}, 0.10, Enum.EasingStyle.Quad)
+        end)
+
+        button.MouseButton1Down:Connect(function()
+            pressed = true
+            tween(buttonScale, {Scale = 0.975}, 0.07, Enum.EasingStyle.Quad)
+            tween(button, {BackgroundColor3 = danger and dangerPress or pressColor}, 0.07, Enum.EasingStyle.Quad)
+        end)
+
+        button.MouseButton1Up:Connect(function()
+            pressed = false
+            tween(buttonScale, {Scale = 1}, 0.16, Enum.EasingStyle.Back)
+            tween(button, {BackgroundColor3 = danger and dangerHover or hoverColor}, 0.10, Enum.EasingStyle.Quad)
+        end)
 
         button.MouseButton1Click:Connect(function()
+            tween(buttonScale, {Scale = 0.965}, 0.06, Enum.EasingStyle.Quad)
+            task.delay(0.06, function()
+                if buttonScale and buttonScale.Parent then
+                    tween(buttonScale, {Scale = 1}, 0.18, Enum.EasingStyle.Back)
+                end
+            end)
+
             if options.Callback then
                 task.spawn(options.Callback)
             end
