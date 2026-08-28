@@ -1614,6 +1614,8 @@ local function BuildFlareUI()
     end
 
     local function makeRow(section, height, title, description, keywords)
+        local hasDescription = description ~= nil and tostring(description) ~= ""
+
         local row = new("Frame", {
             Size = UDim2.new(1, 0, 0, height or 44),
             BackgroundColor3 = Theme.Row,
@@ -1623,8 +1625,9 @@ local function BuildFlareUI()
         stroke(row, Theme.Border, 1)
 
         local titleLabel = new("TextLabel", {
-            Position = UDim2.fromOffset(12, description and 5 or 0),
-            Size = UDim2.new(1, -112, description and 0 or 1, description and 18 or 0),
+            AnchorPoint = hasDescription and Vector2.new(0, 0) or Vector2.new(0, 0.5),
+            Position = hasDescription and UDim2.fromOffset(12, 5) or UDim2.new(0, 12, 0.5, 1),
+            Size = UDim2.new(1, -112, 0, hasDescription and 18 or 20),
             BackgroundTransparency = 1,
             Text = title,
             Font = Enum.Font.GothamMedium,
@@ -1634,16 +1637,17 @@ local function BuildFlareUI()
             TextYAlignment = Enum.TextYAlignment.Center,
         }, row)
 
-        if description and description ~= "" then
+        if hasDescription then
             new("TextLabel", {
                 Position = UDim2.fromOffset(12, 23),
                 Size = UDim2.new(1, -112, 0, 15),
                 BackgroundTransparency = 1,
-                Text = description,
+                Text = tostring(description),
                 Font = Enum.Font.Gotham,
                 TextSize = 9,
                 TextColor3 = Theme.Muted,
                 TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Center,
             }, row)
         end
 
@@ -1679,11 +1683,12 @@ local function BuildFlareUI()
 
     function SectionMethods:AddToggle(options)
         options = options or {}
+        local hasDescription = options.Description ~= nil and tostring(options.Description) ~= ""
         local row = makeRow(
             self,
-            options.Description and 46 or 40,
+            hasDescription and 46 or 40,
             options.Name or "Toggle",
-            options.Description,
+            hasDescription and options.Description or nil,
             options.Keywords
         )
 
@@ -1783,13 +1788,20 @@ local function BuildFlareUI()
         local step = tonumber(options.Step) or 1
         local value = math.clamp(tonumber(options.Default) or minimum, minimum, maximum)
 
-        local row = makeRow(
+        local row, titleLabel = makeRow(
             self,
             54,
             options.Name or "Slider",
             nil,
             options.Keywords
         )
+
+        if titleLabel then
+            titleLabel.AnchorPoint = Vector2.new(0, 0)
+            titleLabel.Position = UDim2.fromOffset(12, 5)
+            titleLabel.Size = UDim2.new(1, -112, 0, 18)
+            titleLabel.TextYAlignment = Enum.TextYAlignment.Center
+        end
 
         local valueLabel = new("TextLabel", {
             AnchorPoint = Vector2.new(1, 0),
