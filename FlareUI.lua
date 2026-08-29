@@ -738,6 +738,11 @@ local function BuildFlareUI()
 
         stroke(mainGroup, Theme.Border, 1)
 
+        -- Subtle window scale used by SetVisible hide/show transitions.
+        local mainScale = new("UIScale", {
+            Scale = 1,
+        }, mainGroup)
+
         local header = new("Frame", {
             Size = UDim2.new(1, 0, 0, 48),
             BackgroundColor3 = Theme.Background,
@@ -966,6 +971,7 @@ local function BuildFlareUI()
         local window = setmetatable({
             Gui = gui,
             Main = mainGroup,
+            MainScale = mainScale,
             Header = header,
             Sidebar = sidebar,
             NavContainer = navContainer,
@@ -991,6 +997,7 @@ local function BuildFlareUI()
             ActiveSliderDrag = nil,
             ActiveSliderRelease = nil,
             Visible = true,
+            VisibilityToken = 0,
             Destroyed = false,
         }, WindowMethods)
 
@@ -1365,12 +1372,69 @@ local function BuildFlareUI()
     end
 
     function WindowMethods:SetVisible(value)
-        self.Visible = value == true
+        local visible = value == true
+        self.Visible = visible
+        self.VisibilityToken = (self.VisibilityToken or 0) + 1
+        local token = self.VisibilityToken
+
         if self._WaitingForLoader then
             self.Main.Visible = false
             return
         end
-        self.Main.Visible = self.Visible
+
+        if visible then
+            -- Make the window exist before animating it back in.
+            self.Main.Visible = true
+            self.Main.GroupTransparency = 1
+
+            if self.MainScale then
+                self.MainScale.Scale = 0.97
+                tween(
+                    self.MainScale,
+                    {Scale = 1},
+                    0.20,
+                    Enum.EasingStyle.Back,
+                    Enum.EasingDirection.Out
+                )
+            end
+
+            tween(
+                self.Main,
+                {GroupTransparency = 0},
+                0.16,
+                Enum.EasingStyle.Quad,
+                Enum.EasingDirection.Out
+            )
+        else
+            if not self.Main.Visible then
+                return
+            end
+
+            tween(
+                self.Main,
+                {GroupTransparency = 1},
+                0.13,
+                Enum.EasingStyle.Quad,
+                Enum.EasingDirection.In
+            )
+
+            if self.MainScale then
+                tween(
+                    self.MainScale,
+                    {Scale = 0.97},
+                    0.13,
+                    Enum.EasingStyle.Quad,
+                    Enum.EasingDirection.In
+                )
+            end
+
+            task.delay(0.14, function()
+                if self.Destroyed or self.VisibilityToken ~= token or self.Visible then
+                    return
+                end
+                self.Main.Visible = false
+            end)
+        end
     end
 
     function WindowMethods:ToggleVisible()
@@ -2359,7 +2423,7 @@ local function BuildFlareUI()
         options = options or {}
         local value = tostring(options.Default or "")
 
-        local row = makeRow(
+        local row, titleLabel = makeRow(
             self,
             40,
             options.Name or "Input",
@@ -2367,16 +2431,30 @@ local function BuildFlareUI()
             options.Keywords
         )
 
+        -- Inputs reserve their own responsive right-hand column.  The old
+        -- fixed 132px box could collide with the row label on wider text and
+        -- allowed long placeholder strings to visually spill into it.
+        local inputScale = math.clamp(tonumber(options.InputScale) or 0.48, 0.34, 0.62)
+        if titleLabel then
+            titleLabel.Size = UDim2.new(1 - inputScale, -28, 0, 20)
+            titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
+        end
+
         local box = new("TextBox", {
             AnchorPoint = Vector2.new(1, 0.5),
             Position = UDim2.new(1, -12, 0.5, 0),
-            Size = UDim2.fromOffset(132, 26),
+            Size = UDim2.new(inputScale, -12, 0, 26),
             BackgroundColor3 = Color3.fromRGB(12, 12, 12),
             BorderSizePixel = 0,
+            ClipsDescendants = true,
             Font = Enum.Font.Code,
             TextSize = 10,
             TextColor3 = Theme.Text,
             TextStrokeTransparency = 1,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Center,
+            TextTruncate = Enum.TextTruncate.AtEnd,
+            TextWrapped = false,
             Text = value,
             PlaceholderText = options.Placeholder or "",
             PlaceholderColor3 = Theme.Muted,
