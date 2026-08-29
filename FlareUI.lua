@@ -738,6 +738,11 @@ local function BuildFlareUI()
 
         stroke(mainGroup, Theme.Border, 1)
 
+        new("UICorner", {
+            CornerRadius = UDim.new(0, 4),
+        }, mainGroup)
+        mainGroup.ClipsDescendants = true
+
         local header = new("Frame", {
             Size = UDim2.new(1, 0, 0, 48),
             BackgroundColor3 = Theme.Background,
