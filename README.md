@@ -459,8 +459,7 @@ FlareUI.Theme.Text = Color3.fromRGB(255, 255, 255)
 ## Full example
 
 ```lua
-local FLARE_UI_URL = "YOUR_RAW_FLARE_UI_URL_HERE"
-local FlareUI = loadstring(game:HttpGet(FLARE_UI_URL))()
+local FlareUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/fhwifmw/FlareUI/refs/heads/main/FlareUI.lua"))()
 
 local Loader = FlareUI:CreateLoader({
     Title = "FLARE HUB | EXAMPLE",
