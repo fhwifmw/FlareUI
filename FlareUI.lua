@@ -7,10 +7,6 @@ local function BuildFlareUI()
 
     local LocalPlayer = Players.LocalPlayer
 
-    -- Device detection lives inside FlareUI so existing hub scripts do not need
-    -- to change anything. Platform detection is preferred when available, with
-    -- input-capability detection as a fallback for executors/clients that do not
-    -- expose GetPlatform.
     local function isMobileDevice()
         local platform
         pcall(function()
