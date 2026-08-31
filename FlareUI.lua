@@ -7,6 +7,10 @@ local function BuildFlareUI()
 
     local LocalPlayer = Players.LocalPlayer
 
+    -- Device detection lives inside FlareUI so existing hub scripts do not need
+    -- to change anything. Platform detection is preferred when available, with
+    -- input-capability detection as a fallback for executors/clients that do not
+    -- expose GetPlatform.
     local function isMobileDevice()
         local platform
         pcall(function()
@@ -680,6 +684,97 @@ local function BuildFlareUI()
     local SectionMethods = {}
     SectionMethods.__index = SectionMethods
 
+    local FallbackIconGlyphs = {
+        search = "⌕",
+        settings = "⚙",
+        gear = "⚙",
+        x = "×",
+        close = "×",
+        minus = "−",
+        plus = "+",
+        home = "⌂",
+        eye = "◉",
+        fish = "≈",
+        waves = "≋",
+        wave = "≋",
+        leaf = "❋",
+        sword = "⚔",
+        swords = "⚔",
+        crosshair = "⊕",
+        target = "⊕",
+        move = "✥",
+        zap = "⚡",
+        bolt = "⚡",
+        package = "▣",
+        box = "▣",
+        backpack = "▣",
+        bag = "▣",
+        cube = "▣",
+        user = "◌",
+        users = "◎",
+        person = "◌",
+        people = "◎",
+        trophy = "★",
+        star = "★",
+        crown = "♛",
+        shield = "⬒",
+        shieldcheck = "⬒",
+        anchor = "⚓",
+        ship = "⚓",
+        compass = "◈",
+        globe = "◍",
+        map = "◫",
+        phone = "◫",
+        monitor = "▤",
+        gamepad = "✦",
+        joystick = "✦",
+        car = "◀",
+        rabbit = "R",
+        dinosaur = "D",
+        bone = "B",
+        pickaxe = "P",
+        hammer = "H",
+        skull = "☠",
+        flame = "✦",
+        fire = "✦",
+        droplet = "◍",
+        water = "◍",
+        gem = "◆",
+        diamond = "◆",
+        coins = "$",
+        coin = "$",
+        wrench = "W",
+        tool = "T",
+        tools = "T",
+        book = "▤",
+        scroll = "S",
+        list = "≡",
+        menu = "≡",
+    }
+
+    local function fallbackIconText(name)
+        name = tostring(name or "circle"):lower():gsub("[^a-z0-9%-_]", "")
+        local compact = name:gsub("[-_]", "")
+        if FallbackIconGlyphs[name] then
+            return FallbackIconGlyphs[name]
+        end
+        if FallbackIconGlyphs[compact] then
+            return FallbackIconGlyphs[compact]
+        end
+
+        local parts = {}
+        for part in tostring(name):gmatch("[a-z0-9]+") do
+            if #parts < 2 then
+                parts[#parts + 1] = part:sub(1, 1):upper()
+            end
+        end
+
+        if #parts == 0 then
+            return "•"
+        end
+        return table.concat(parts)
+    end
+
     local function createIcon(parent, name, size, tint)
         size = size or 16
 
@@ -713,10 +808,12 @@ local function BuildFlareUI()
         return new("TextLabel", {
             Size = UDim2.fromOffset(size, size),
             BackgroundTransparency = 1,
-            Text = "·",
+            Text = fallbackIconText(name),
             Font = Enum.Font.GothamBold,
-            TextSize = math.max(10, size),
+            TextSize = math.max(10, math.floor(size * 0.9)),
             TextColor3 = tint or Theme.Muted,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            TextYAlignment = Enum.TextYAlignment.Center,
         }, parent)
     end
 
