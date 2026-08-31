@@ -7,10 +7,6 @@ local function BuildFlareUI()
 
     local LocalPlayer = Players.LocalPlayer
 
-    -- Device detection lives inside FlareUI so existing hub scripts do not need
-    -- to change anything. Platform detection is preferred when available, with
-    -- input-capability detection as a fallback for executors/clients that do not
-    -- expose GetPlatform.
     local function isMobileDevice()
         local platform
         pcall(function()
@@ -1100,11 +1096,23 @@ local function BuildFlareUI()
                     BackgroundTransparency = 0.08,
                     BorderSizePixel = 0,
                     AutoButtonColor = false,
+                    ZIndex = 1000,
+                }, gui)
+
+                local mobileIcon = new("ImageLabel", {
+                    Name = "Icon",
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.fromScale(0.5, 0.5),
+                    Size = UDim2.fromScale(0.82, 0.82),
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
                     Image = flareAsset,
                     ImageColor3 = Color3.new(1, 1, 1),
                     ScaleType = Enum.ScaleType.Fit,
-                    ZIndex = 1000,
-                }, gui)
+                    ZIndex = 1001,
+                }, mobileButton)
+
+                new("UICorner", {CornerRadius = UDim.new(1, 0)}, mobileIcon)
             else
                 mobileButton = new("TextButton", {
                     Name = "FlareMobileToggle",
