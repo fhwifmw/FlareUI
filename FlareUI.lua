@@ -7,6 +7,25 @@ local function BuildFlareUI()
 
     local LocalPlayer = Players.LocalPlayer
 
+    -- Device detection lives inside FlareUI so existing hub scripts do not need
+    -- to change anything. Platform detection is preferred when available, with
+    -- input-capability detection as a fallback for executors/clients that do not
+    -- expose GetPlatform.
+    local function isMobileDevice()
+        local platform
+        pcall(function()
+            if type(UIS.GetPlatform) == "function" then
+                platform = UIS:GetPlatform()
+            end
+        end)
+
+        if platform == Enum.Platform.IOS or platform == Enum.Platform.Android then
+            return true
+        end
+
+        return UIS.TouchEnabled and not (UIS.KeyboardEnabled and UIS.MouseEnabled)
+    end
+
     local FlareUI = {}
     FlareUI.__index = FlareUI
 
@@ -714,6 +733,19 @@ local function BuildFlareUI()
     function FlareUI:CreateWindow(options)
         options = options or {}
 
+        local mobile = isMobileDevice()
+        local baseWidth = tonumber(options.Width) or 620
+        local baseHeight = tonumber(options.Height) or 440
+        local mobileScale = 1
+
+        if mobile then
+            local camera = workspace.CurrentCamera
+            local viewport = camera and camera.ViewportSize or Vector2.new(800, 600)
+            local widthScale = math.max(0.1, (viewport.X - 24) / baseWidth)
+            local heightScale = math.max(0.1, (viewport.Y - 92) / baseHeight)
+            mobileScale = math.clamp(math.min(widthScale, heightScale, tonumber(options.MobileScale) or 0.76), 0.50, 0.76)
+        end
+
         local activeLoader =
             FlareUI._ActiveLoader
             and not FlareUI._ActiveLoader.Finished
@@ -729,7 +761,7 @@ local function BuildFlareUI()
         local mainGroup = new("CanvasGroup", {
             AnchorPoint = Vector2.new(0.5, 0.5),
             Position = UDim2.fromScale(0.5, 0.5),
-            Size = UDim2.fromOffset(options.Width or 620, options.Height or 440),
+            Size = UDim2.fromOffset(baseWidth, baseHeight),
             BackgroundColor3 = Theme.Background,
             BorderSizePixel = 0,
             GroupTransparency = activeLoader and 1 or 1,
@@ -740,7 +772,7 @@ local function BuildFlareUI()
 
         -- Subtle window scale used by SetVisible hide/show transitions.
         local mainScale = new("UIScale", {
-            Scale = 1,
+            Scale = mobileScale,
         }, mainGroup)
 
         local header = new("Frame", {
@@ -972,6 +1004,9 @@ local function BuildFlareUI()
             Gui = gui,
             Main = mainGroup,
             MainScale = mainScale,
+            BaseScale = mobileScale,
+            IsMobile = mobile,
+            MobileToggle = nil,
             Header = header,
             Sidebar = sidebar,
             NavContainer = navContainer,
@@ -1004,17 +1039,27 @@ local function BuildFlareUI()
         local dragging = false
         local dragStart
         local startPos
+        local dragInput
 
         table.insert(window.Connections, header.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch
+            then
                 dragging = true
+                dragInput = input
                 dragStart = input.Position
                 startPos = mainGroup.Position
             end
         end))
 
         table.insert(window.Connections, UIS.InputChanged:Connect(function(input)
-            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local isMouseDrag = dragging and input.UserInputType == Enum.UserInputType.MouseMovement
+            local isTouchDrag = dragging
+                and dragInput
+                and dragInput.UserInputType == Enum.UserInputType.Touch
+                and input == dragInput
+
+            if isMouseDrag or isTouchDrag then
                 local delta = input.Position - dragStart
                 mainGroup.Position = UDim2.new(
                     startPos.X.Scale,
@@ -1032,10 +1077,115 @@ local function BuildFlareUI()
         end))
 
         table.insert(window.Connections, UIS.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+                or (input.UserInputType == Enum.UserInputType.Touch and input == dragInput)
+            then
                 dragging = false
+                dragInput = nil
             end
         end))
+
+        -- Mobile gets a persistent floating Flare button. It is a sibling of the
+        -- main window, so it remains tappable while the window is hidden.
+        if mobile then
+            local flareAsset = resolveAsset("flare_icon")
+            local mobileButton
+
+            if flareAsset then
+                mobileButton = new("ImageButton", {
+                    Name = "FlareMobileToggle",
+                    Position = UDim2.fromOffset(16, 82),
+                    Size = UDim2.fromOffset(48, 48),
+                    BackgroundColor3 = Color3.fromRGB(7, 7, 7),
+                    BackgroundTransparency = 0.08,
+                    BorderSizePixel = 0,
+                    AutoButtonColor = false,
+                    Image = flareAsset,
+                    ImageColor3 = Color3.new(1, 1, 1),
+                    ScaleType = Enum.ScaleType.Fit,
+                    ZIndex = 1000,
+                }, gui)
+            else
+                mobileButton = new("TextButton", {
+                    Name = "FlareMobileToggle",
+                    Position = UDim2.fromOffset(16, 82),
+                    Size = UDim2.fromOffset(48, 48),
+                    BackgroundColor3 = Color3.fromRGB(7, 7, 7),
+                    BackgroundTransparency = 0.08,
+                    BorderSizePixel = 0,
+                    AutoButtonColor = false,
+                    Text = "F",
+                    Font = Enum.Font.GothamBlack,
+                    TextSize = 24,
+                    TextColor3 = Theme.Accent,
+                    ZIndex = 1000,
+                }, gui)
+            end
+
+            new("UICorner", {CornerRadius = UDim.new(1, 0)}, mobileButton)
+            stroke(mobileButton, Theme.Border, 1)
+
+            local buttonScale = new("UIScale", {Scale = 1}, mobileButton)
+            local buttonDragging = false
+            local buttonDragInput
+            local buttonStart
+            local buttonStartPos
+            local moved = false
+
+            table.insert(window.Connections, mobileButton.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch
+                    or input.UserInputType == Enum.UserInputType.MouseButton1
+                then
+                    buttonDragging = true
+                    buttonDragInput = input
+                    buttonStart = input.Position
+                    buttonStartPos = mobileButton.Position
+                    moved = false
+                    tween(buttonScale, {Scale = 0.92}, 0.08, Enum.EasingStyle.Quad)
+                end
+            end))
+
+            table.insert(window.Connections, UIS.InputChanged:Connect(function(input)
+                if not buttonDragging then return end
+
+                local valid = input.UserInputType == Enum.UserInputType.MouseMovement
+                    or (buttonDragInput
+                        and buttonDragInput.UserInputType == Enum.UserInputType.Touch
+                        and input == buttonDragInput)
+
+                if not valid then return end
+
+                local delta = input.Position - buttonStart
+                if delta.Magnitude > 7 then
+                    moved = true
+                end
+
+                local camera = workspace.CurrentCamera
+                local viewport = camera and camera.ViewportSize or Vector2.new(800, 600)
+                local x = math.clamp(buttonStartPos.X.Offset + delta.X, 8, math.max(8, viewport.X - 56))
+                local y = math.clamp(buttonStartPos.Y.Offset + delta.Y, 8, math.max(8, viewport.Y - 56))
+                mobileButton.Position = UDim2.fromOffset(x, y)
+            end))
+
+            table.insert(window.Connections, UIS.InputEnded:Connect(function(input)
+                if not buttonDragging then return end
+                if input.UserInputType ~= Enum.UserInputType.MouseButton1
+                    and not (input.UserInputType == Enum.UserInputType.Touch and input == buttonDragInput)
+                then
+                    return
+                end
+
+                buttonDragging = false
+                buttonDragInput = nil
+                tween(buttonScale, {Scale = 1}, 0.16, Enum.EasingStyle.Back)
+
+                if not moved and not window.Destroyed then
+                    window:ToggleVisible()
+                end
+            end))
+
+            window.MobileToggle = mobileButton
+        end
 
         local function bindHeaderButton(button, icon, hoverColor, callbackName)
             table.insert(window.Connections, button.MouseEnter:Connect(function()
@@ -1388,10 +1538,11 @@ local function BuildFlareUI()
             self.Main.GroupTransparency = 1
 
             if self.MainScale then
-                self.MainScale.Scale = 0.97
+                local baseScale = self.BaseScale or 1
+                self.MainScale.Scale = baseScale * 0.97
                 tween(
                     self.MainScale,
-                    {Scale = 1},
+                    {Scale = baseScale},
                     0.20,
                     Enum.EasingStyle.Back,
                     Enum.EasingDirection.Out
@@ -1419,9 +1570,10 @@ local function BuildFlareUI()
             )
 
             if self.MainScale then
+                local baseScale = self.BaseScale or 1
                 tween(
                     self.MainScale,
-                    {Scale = 0.97},
+                    {Scale = baseScale * 0.97},
                     0.13,
                     Enum.EasingStyle.Quad,
                     Enum.EasingDirection.In
@@ -1439,6 +1591,10 @@ local function BuildFlareUI()
 
     function WindowMethods:ToggleVisible()
         self:SetVisible(not self.Visible)
+    end
+
+    function WindowMethods:IsMobileClient()
+        return self.IsMobile == true
     end
 
     function WindowMethods:SetActive(name, enabled)
