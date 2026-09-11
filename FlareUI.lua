@@ -7,6 +7,52 @@ local function BuildFlareUI()
 
     local LocalPlayer = Players.LocalPlayer
 
+    -- Stage-1 bootstrap handoff. If the FlareKey loader is showing its compact
+    -- top status card, reaching BuildFlareUI means the protected script really
+    -- started, so remove that temporary UI immediately.
+    do
+        if type(getgenv) == "function" then
+            pcall(function()
+                local environment = getgenv()
+                if type(environment) ~= "table" then
+                    return
+                end
+
+                local bootstrap = rawget(environment, "__FlareBootstrapGui")
+                if typeof(bootstrap) == "Instance" then
+                    bootstrap:Destroy()
+                end
+
+                rawset(environment, "__FlareBootstrapGui", nil)
+            end)
+        end
+
+        -- Fallback for environments where the shared global reference was lost.
+        for _, parent in ipairs({
+            (function()
+                if type(gethui) == "function" then
+                    local ok, result = pcall(gethui)
+                    if ok and typeof(result) == "Instance" then
+                        return result
+                    end
+                end
+                return nil
+            end)(),
+            LocalPlayer and (LocalPlayer:FindFirstChildOfClass("PlayerGui") or LocalPlayer:FindFirstChild("PlayerGui")) or nil,
+            CoreGui,
+        }) do
+            if parent then
+                local bootstrap = parent:FindFirstChild("FlareBootstrapStatus")
+                if bootstrap then
+                    pcall(function()
+                        bootstrap:Destroy()
+                    end)
+                end
+            end
+        end
+    end
+
+
     local function isMobileDevice()
         local platform
         pcall(function()
