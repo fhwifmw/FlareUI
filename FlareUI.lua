@@ -6,10 +6,6 @@ local function BuildFlareUI()
     local CoreGui = game:GetService("CoreGui")
 
     local LocalPlayer = Players.LocalPlayer
-
-    -- Stage-1 bootstrap handoff. If the FlareKey loader is showing its compact
-    -- top status card, reaching BuildFlareUI means the protected script really
-    -- started, so remove that temporary UI immediately.
     do
         if type(getgenv) == "function" then
             pcall(function()
@@ -27,7 +23,6 @@ local function BuildFlareUI()
             end)
         end
 
-        -- Fallback for environments where the shared global reference was lost.
         for _, parent in ipairs({
             (function()
                 if type(gethui) == "function" then
@@ -931,7 +926,7 @@ local function BuildFlareUI()
 
         new("TextLabel", {
             Position = UDim2.fromOffset(25, 0),
-            Size = UDim2.new(1, -112, 1, 0),
+            Size = UDim2.new(1, -146, 1, 0),
             BackgroundTransparency = 1,
             Text = options.Title or "FLARE HUB",
             Font = Enum.Font.GothamBold,
@@ -939,6 +934,21 @@ local function BuildFlareUI()
             TextColor3 = Theme.Text,
             TextXAlignment = Enum.TextXAlignment.Left,
         }, header)
+
+        local hudToggleButton = new("TextButton", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            Position = UDim2.new(1, -81, 0.5, 0),
+            Size = UDim2.fromOffset(30, 28),
+            BackgroundColor3 = Theme.Background,
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Text = "",
+            AutoButtonColor = false,
+        }, header)
+
+        local hudToggleIcon = createIcon(hudToggleButton, "list", 15, Theme.Muted)
+        hudToggleIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+        hudToggleIcon.Position = UDim2.fromScale(0.5, 0.5)
 
         local minimizeButton = new("TextButton", {
             AnchorPoint = Vector2.new(1, 0.5),
@@ -999,7 +1009,7 @@ local function BuildFlareUI()
             BackgroundColor3 = Theme.Row,
             BorderSizePixel = 0,
         }, sidebar)
-        stroke(searchFrame, Color3.fromRGB(105, 105, 105), 1)
+        local searchStroke = stroke(searchFrame, Color3.fromRGB(105, 105, 105), 1)
 
         local searchIcon = createIcon(searchFrame, "search", 14, Theme.Muted)
         searchIcon.Position = UDim2.fromOffset(9, 8)
@@ -1041,6 +1051,15 @@ local function BuildFlareUI()
             SortOrder = Enum.SortOrder.LayoutOrder,
             Padding = UDim.new(0, 6),
         }, navContainer)
+
+        local navIndicator = new("Frame", {
+            Position = UDim2.fromOffset(8, 59),
+            Size = UDim2.fromOffset(2, 18),
+            BackgroundColor3 = Theme.Accent,
+            BorderSizePixel = 0,
+            Visible = false,
+            ZIndex = 10,
+        }, sidebar)
 
         local profile = new("Frame", {
             Position = UDim2.new(0, 8, 1, -96),
@@ -1089,7 +1108,7 @@ local function BuildFlareUI()
             TextXAlignment = Enum.TextXAlignment.Left,
         }, profile)
 
-        new("TextLabel", {
+        local keyStatusLabel = new("TextLabel", {
             Position = UDim2.fromOffset(12, 59),
             Size = UDim2.new(1, -14, 0, 20),
             BackgroundTransparency = 1,
@@ -1106,40 +1125,103 @@ local function BuildFlareUI()
             BackgroundTransparency = 1,
         }, mainGroup)
 
-        local hud = new("Frame", {
+        local HUD_BAR_HEIGHT = 22
+
+        local hud = new("CanvasGroup", {
             AnchorPoint = Vector2.new(1, 0),
             Position = UDim2.new(1, -18, 0, 18),
-            Size = UDim2.fromOffset(170, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
+            Size = UDim2.fromOffset(170, HUD_BAR_HEIGHT),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            GroupTransparency = 1,
+            Visible = false,
+            ZIndex = 200,
+        }, gui)
+        stroke(hud, Color3.fromRGB(185, 185, 185), 1)
+
+        local hudBar = new("Frame", {
+            Size = UDim2.new(1, 0, 0, HUD_BAR_HEIGHT),
+            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            Active = true,
+            ZIndex = 201,
+        }, hud)
+
+        local hudCollapseButton = new("TextButton", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            Position = UDim2.new(1, -28, 0.5, 0),
+            Size = UDim2.fromOffset(24, 20),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Text = "−",
+            Font = Enum.Font.GothamBold,
+            TextSize = 13,
+            TextColor3 = Theme.Muted,
+            AutoButtonColor = false,
+            ZIndex = 202,
+        }, hudBar)
+
+        local hudCloseButton = new("TextButton", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            Position = UDim2.new(1, -4, 0.5, 0),
+            Size = UDim2.fromOffset(24, 20),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Text = "×",
+            Font = Enum.Font.GothamBold,
+            TextSize = 13,
+            TextColor3 = Theme.Muted,
+            AutoButtonColor = false,
+            ZIndex = 202,
+        }, hudBar)
+
+        local hudBody = new("Frame", {
+            Position = UDim2.fromOffset(0, HUD_BAR_HEIGHT),
+            Size = UDim2.new(1, 0, 0, 0),
             BackgroundColor3 = Color3.fromRGB(0, 0, 0),
             BackgroundTransparency = 0.14,
             BorderSizePixel = 0,
-            Visible = false,
-        }, gui)
-        stroke(hud, Color3.fromRGB(185, 185, 185), 1)
+            ClipsDescendants = true,
+            ZIndex = 200,
+        }, hud)
 
         new("Frame", {
             Size = UDim2.new(0, 2, 1, 0),
             BackgroundColor3 = Theme.Accent,
             BorderSizePixel = 0,
-        }, hud)
+            ZIndex = 201,
+        }, hudBody)
 
         local hudContent = new("Frame", {
             Position = UDim2.fromOffset(8, 6),
-            Size = UDim2.new(1, -14, 0, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
+            Size = UDim2.new(1, -14, 1, -12),
             BackgroundTransparency = 1,
-        }, hud)
+            ZIndex = 201,
+        }, hudBody)
 
-        new("UIListLayout", {
+        local hudLayout = new("UIListLayout", {
             FillDirection = Enum.FillDirection.Vertical,
             SortOrder = Enum.SortOrder.LayoutOrder,
             Padding = UDim.new(0, 2),
         }, hudContent)
 
-        new("UIPadding", {
-            PaddingBottom = UDim.new(0, 6),
-        }, hud)
+        local notificationHolder = new("Frame", {
+            AnchorPoint = Vector2.new(1, 1),
+            Position = UDim2.new(1, -18, 1, -18),
+            Size = UDim2.new(0, 240, 1, -36),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            ClipsDescendants = false,
+            ZIndex = 300,
+        }, gui)
+
+        new("UIListLayout", {
+            FillDirection = Enum.FillDirection.Vertical,
+            HorizontalAlignment = Enum.HorizontalAlignment.Right,
+            VerticalAlignment = Enum.VerticalAlignment.Bottom,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 6),
+        }, notificationHolder)
 
         local window = setmetatable({
             Gui = gui,
@@ -1151,14 +1233,19 @@ local function BuildFlareUI()
             Header = header,
             Sidebar = sidebar,
             NavContainer = navContainer,
+            NavIndicator = navIndicator,
             Content = content,
             SearchBox = searchBox,
             SearchFrame = searchFrame,
             Profile = profile,
+            KeyStatusLabel = keyStatusLabel,
+            HUDToggleButton = hudToggleButton,
+            HUDToggleIcon = hudToggleIcon,
             MinimizeButton = minimizeButton,
             CloseButton = closeButton,
             MinimizeCallback = options.OnMinimize,
             CloseCallback = options.OnClose,
+            OnKeyExpired = options.OnKeyExpired,
             Tabs = {},
             TabOrder = {},
             Entries = {},
@@ -1168,14 +1255,122 @@ local function BuildFlareUI()
             PreSearchTab = nil,
             SearchQuery = "",
             HUD = hud,
+            HUDBar = hudBar,
+            HUDBody = hudBody,
             HUDContent = hudContent,
+            HUDLayout = hudLayout,
+            HUDCollapseButton = hudCollapseButton,
+            HUDCloseButton = hudCloseButton,
             HUDItems = {},
+            HUDItemOrder = 0,
+            HUDCollapsed = false,
+            HUDUserHidden = false,
+            HUDBarHeight = HUD_BAR_HEIGHT,
+            NotificationHolder = notificationHolder,
+            NotificationOrder = 0,
+            Notifications = {},
+            KeyExpiresAt = nil,
+            _KeyExpiryLoopRunning = false,
             ActiveSliderDrag = nil,
             ActiveSliderRelease = nil,
             Visible = true,
             VisibilityToken = 0,
             Destroyed = false,
         }, WindowMethods)
+
+        window._UpdateNavIndicator = function(animated)
+            if window.Destroyed or not window.NavIndicator then return end
+            local current = window.CurrentTab and window.Tabs[window.CurrentTab]
+            if not current or not current.Button or not current.Button.Visible then
+                window.NavIndicator.Visible = false
+                return
+            end
+
+            local button = current.Button
+            if button.AbsoluteSize.Y <= 0 then
+                task.defer(function()
+                    if not window.Destroyed and window._UpdateNavIndicator then
+                        window._UpdateNavIndicator(false)
+                    end
+                end)
+                return
+            end
+
+            local localX = button.AbsolutePosition.X - sidebar.AbsolutePosition.X
+            local localY = button.AbsolutePosition.Y - sidebar.AbsolutePosition.Y + (button.AbsoluteSize.Y * 0.5) - 9
+            local target = UDim2.fromOffset(math.floor(localX + 0.5), math.floor(localY + 0.5))
+
+            window.NavIndicator.Visible = true
+            if animated then
+                tween(window.NavIndicator, {Position = target}, 0.16, Enum.EasingStyle.Quart)
+            else
+                window.NavIndicator.Position = target
+            end
+        end
+
+        table.insert(window.Connections, navContainer:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+            if window._UpdateNavIndicator then
+                window._UpdateNavIndicator(false)
+            end
+        end))
+
+        local hudDragging = false
+        local hudDragInput
+        local hudDragStart
+        local hudStartPos
+
+        local function pointInside(guiObject, point)
+            if not guiObject or not guiObject.Parent then return false end
+            local pos = guiObject.AbsolutePosition
+            local size = guiObject.AbsoluteSize
+            return point.X >= pos.X and point.X <= pos.X + size.X
+                and point.Y >= pos.Y and point.Y <= pos.Y + size.Y
+        end
+
+        table.insert(window.Connections, hudBar.InputBegan:Connect(function(input)
+            if input.UserInputType ~= Enum.UserInputType.MouseButton1
+                and input.UserInputType ~= Enum.UserInputType.Touch
+            then
+                return
+            end
+
+            if pointInside(hudCollapseButton, input.Position) or pointInside(hudCloseButton, input.Position) then
+                return
+            end
+
+            hudDragging = true
+            hudDragInput = input
+            hudDragStart = input.Position
+            hudStartPos = hud.Position
+        end))
+
+        table.insert(window.Connections, UIS.InputChanged:Connect(function(input)
+            if not hudDragging then return end
+
+            local valid = input.UserInputType == Enum.UserInputType.MouseMovement
+                or (hudDragInput
+                    and hudDragInput.UserInputType == Enum.UserInputType.Touch
+                    and input == hudDragInput)
+
+            if not valid then return end
+
+            local delta = input.Position - hudDragStart
+            hud.Position = UDim2.new(
+                hudStartPos.X.Scale,
+                hudStartPos.X.Offset + delta.X,
+                hudStartPos.Y.Scale,
+                hudStartPos.Y.Offset + delta.Y
+            )
+        end))
+
+        table.insert(window.Connections, UIS.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+                or (input.UserInputType == Enum.UserInputType.Touch and input == hudDragInput)
+            then
+                hudDragging = false
+                hudDragInput = nil
+            end
+        end))
 
         local dragging = false
         local dragStart
@@ -1349,6 +1544,8 @@ local function BuildFlareUI()
                 tween(button, {BackgroundTransparency = 0, BackgroundColor3 = hoverColor}, 0.10)
                 if icon:IsA("ImageLabel") or icon:IsA("ImageButton") then
                     icon.ImageColor3 = Theme.Text
+                elseif icon:IsA("TextLabel") or icon:IsA("TextButton") then
+                    icon.TextColor3 = Theme.Text
                 end
             end))
 
@@ -1357,6 +1554,8 @@ local function BuildFlareUI()
                 tween(button, {BackgroundTransparency = 1}, 0.10)
                 if icon:IsA("ImageLabel") or icon:IsA("ImageButton") then
                     icon.ImageColor3 = Theme.Muted
+                elseif icon:IsA("TextLabel") or icon:IsA("TextButton") then
+                    icon.TextColor3 = Theme.Muted
                 end
             end))
 
@@ -1371,11 +1570,55 @@ local function BuildFlareUI()
             end))
         end
 
+        window.HUDToggleCallback = function()
+            window:ToggleActiveHUD()
+        end
+
+        bindHeaderButton(hudToggleButton, hudToggleIcon, Theme.RowHover, "HUDToggleCallback")
         bindHeaderButton(minimizeButton, minimizeIcon, Theme.RowHover, "MinimizeCallback")
         bindHeaderButton(closeButton, closeIcon, Color3.fromRGB(62, 18, 28), "CloseCallback")
 
+        table.insert(window.Connections, hudCollapseButton.MouseEnter:Connect(function()
+            tween(hudCollapseButton, {TextColor3 = Theme.Text}, 0.10, Enum.EasingStyle.Quad)
+        end))
+        table.insert(window.Connections, hudCollapseButton.MouseLeave:Connect(function()
+            tween(hudCollapseButton, {TextColor3 = Theme.Muted}, 0.10, Enum.EasingStyle.Quad)
+        end))
+        table.insert(window.Connections, hudCloseButton.MouseEnter:Connect(function()
+            tween(hudCloseButton, {TextColor3 = Theme.Text}, 0.10, Enum.EasingStyle.Quad)
+        end))
+        table.insert(window.Connections, hudCloseButton.MouseLeave:Connect(function()
+            tween(hudCloseButton, {TextColor3 = Theme.Muted}, 0.10, Enum.EasingStyle.Quad)
+        end))
+
+        table.insert(window.Connections, hudCollapseButton.MouseButton1Click:Connect(function()
+            window:SetActiveHUDCollapsed(not window.HUDCollapsed)
+        end))
+
+        table.insert(window.Connections, hudCloseButton.MouseButton1Click:Connect(function()
+            window:HideActiveHUD()
+        end))
+
         table.insert(window.Connections, searchBox:GetPropertyChangedSignal("Text"):Connect(function()
             window:SetSearch(searchBox.Text)
+        end))
+
+        table.insert(window.Connections, searchBox.Focused:Connect(function()
+            tween(searchStroke, {Color = Theme.Accent}, 0.12, Enum.EasingStyle.Quad)
+            if searchIcon:IsA("ImageLabel") or searchIcon:IsA("ImageButton") then
+                tween(searchIcon, {ImageColor3 = Theme.Accent}, 0.12, Enum.EasingStyle.Quad)
+            else
+                tween(searchIcon, {TextColor3 = Theme.Accent}, 0.12, Enum.EasingStyle.Quad)
+            end
+        end))
+
+        table.insert(window.Connections, searchBox.FocusLost:Connect(function()
+            tween(searchStroke, {Color = Color3.fromRGB(105, 105, 105)}, 0.12, Enum.EasingStyle.Quad)
+            if searchIcon:IsA("ImageLabel") or searchIcon:IsA("ImageButton") then
+                tween(searchIcon, {ImageColor3 = Theme.Muted}, 0.12, Enum.EasingStyle.Quad)
+            else
+                tween(searchIcon, {TextColor3 = Theme.Muted}, 0.12, Enum.EasingStyle.Quad)
+            end
         end))
 
         table.insert(window.Connections, UIS.InputEnded:Connect(function(input)
@@ -1398,6 +1641,15 @@ local function BuildFlareUI()
                 GroupTransparency = 0,
                 Position = UDim2.fromScale(0.5, 0.5),
             }, 0.24, Enum.EasingStyle.Quart)
+        end
+
+        local initialKeyExpiry = options.KeyExpiry
+        if initialKeyExpiry == nil then
+            initialKeyExpiry = options.KeyExpiresAt
+        end
+
+        if initialKeyExpiry ~= nil then
+            window:SetKeyExpiry(initialKeyExpiry)
         end
 
         return window
@@ -1532,6 +1784,20 @@ local function BuildFlareUI()
             end
         end))
 
+        if not self.IsMobile then
+            table.insert(self.Connections, button.MouseEnter:Connect(function()
+                if self.Destroyed or self.CurrentTab == name then return end
+                tween(button, {BackgroundColor3 = Color3.fromRGB(9, 9, 9)}, 0.10, Enum.EasingStyle.Quad)
+                tween(label, {TextColor3 = Color3.fromRGB(185, 185, 185)}, 0.10, Enum.EasingStyle.Quad)
+            end))
+
+            table.insert(self.Connections, button.MouseLeave:Connect(function()
+                if self.Destroyed or self.CurrentTab == name then return end
+                tween(button, {BackgroundColor3 = Theme.Background}, 0.10, Enum.EasingStyle.Quad)
+                tween(label, {TextColor3 = Theme.Muted}, 0.10, Enum.EasingStyle.Quad)
+            end))
+        end
+
         if not self.CurrentTab then
             self:SelectTab(name)
         end
@@ -1551,14 +1817,29 @@ local function BuildFlareUI()
 
         for _, item in ipairs(self.TabOrder) do
             local selected = item == tab
-            item.Indicator.Visible = selected
-            item.Label.TextColor3 = selected and Theme.Text or Theme.Muted
+            item.Indicator.Visible = false
+
+            tween(item.Label, {
+                TextColor3 = selected and Theme.Text or Theme.Muted,
+            }, 0.12, Enum.EasingStyle.Quad)
+
             if item.Icon:IsA("ImageLabel") or item.Icon:IsA("ImageButton") then
-                item.Icon.ImageColor3 = selected and Theme.Accent or Theme.Muted
+                tween(item.Icon, {
+                    ImageColor3 = selected and Theme.Accent or Theme.Muted,
+                }, 0.12, Enum.EasingStyle.Quad)
             elseif item.Icon:IsA("TextLabel") or item.Icon:IsA("TextButton") then
-                item.Icon.TextColor3 = selected and Theme.Accent or Theme.Muted
+                tween(item.Icon, {
+                    TextColor3 = selected and Theme.Accent or Theme.Muted,
+                }, 0.12, Enum.EasingStyle.Quad)
             end
-            item.Button.BackgroundColor3 = selected and Theme.Row or Theme.Background
+
+            tween(item.Button, {
+                BackgroundColor3 = selected and Theme.Row or Theme.Background,
+            }, 0.12, Enum.EasingStyle.Quad)
+        end
+
+        if self._UpdateNavIndicator then
+            self._UpdateNavIndicator(previous ~= nil)
         end
 
         if previous == tab and tab.PageGroup.Visible then
@@ -1753,48 +2034,318 @@ local function BuildFlareUI()
         return self.IsMobile == true
     end
 
+    function WindowMethods:_refreshKeyExpiry()
+        if self.Destroyed then return end
+
+        local expiresAt = tonumber(self.KeyExpiresAt)
+        if not expiresAt then
+            if self.KeyStatusLabel then
+                self.KeyStatusLabel.Text = "Key expires: Never"
+            end
+            return
+        end
+
+        local remaining = expiresAt - os.time()
+        if remaining <= 0 then
+            if self._KeyExpiryFired then return end
+            self._KeyExpiryFired = true
+
+            if type(self.OnKeyExpired) == "function" then
+                pcall(self.OnKeyExpired)
+            end
+
+            self:Destroy()
+            return
+        end
+
+        if not self.KeyStatusLabel then return end
+
+        if remaining > 86400 then
+            local dateText = os.date("%b %d, %Y", expiresAt)
+            dateText = tostring(dateText):gsub(" 0(%d),", " %1,")
+            self.KeyStatusLabel.Text = "Key expires: " .. dateText
+        elseif remaining >= 3600 then
+            local hours = math.floor(remaining / 3600)
+            local minutes = math.floor((remaining % 3600) / 60)
+            if minutes > 0 then
+                self.KeyStatusLabel.Text = string.format("Key expires in: %dh %dm", hours, minutes)
+            else
+                self.KeyStatusLabel.Text = string.format("Key expires in: %dh", hours)
+            end
+        else
+            local minutes = math.max(1, math.ceil(remaining / 60))
+            self.KeyStatusLabel.Text = string.format("Key expires in: %dm", minutes)
+        end
+    end
+
+    function WindowMethods:_ensureKeyExpiryLoop()
+        if self._KeyExpiryLoopRunning or self.Destroyed or not self.KeyExpiresAt then
+            return
+        end
+
+        self._KeyExpiryLoopRunning = true
+
+        task.spawn(function()
+            while not self.Destroyed and self.KeyExpiresAt do
+                self:_refreshKeyExpiry()
+                if self.Destroyed or not self.KeyExpiresAt then
+                    break
+                end
+                task.wait(1)
+            end
+
+            self._KeyExpiryLoopRunning = false
+        end)
+    end
+
+    function WindowMethods:SetKeyExpiry(expiresAt)
+        if self.Destroyed then return end
+
+        if expiresAt == nil or expiresAt == false then
+            self.KeyExpiresAt = nil
+            self._KeyExpiryFired = false
+            if self.KeyStatusLabel then
+                self.KeyStatusLabel.Text = "Key expires: Never"
+            end
+            return
+        end
+
+        if type(expiresAt) == "string" then
+            local lowered = string.lower(expiresAt)
+            if lowered == "" or lowered == "never" or lowered == "none" then
+                self.KeyExpiresAt = nil
+                self._KeyExpiryFired = false
+                if self.KeyStatusLabel then
+                    self.KeyStatusLabel.Text = "Key expires: Never"
+                end
+                return
+            end
+        end
+
+        local timestamp = tonumber(expiresAt)
+        if not timestamp then
+            return
+        end
+
+        -- Accept Unix seconds natively and tolerate millisecond timestamps from APIs.
+        if timestamp > 100000000000 then
+            timestamp = timestamp / 1000
+        end
+
+        self.KeyExpiresAt = math.floor(timestamp)
+        self._KeyExpiryFired = false
+        self:_refreshKeyExpiry()
+
+        if not self.Destroyed and self.KeyExpiresAt then
+            self:_ensureKeyExpiryLoop()
+        end
+    end
+
+    function WindowMethods:GetKeyExpiry()
+        return self.KeyExpiresAt
+    end
+
+    function WindowMethods:_activeHUDCount()
+        local count = 0
+        for _, item in pairs(self.HUDItems) do
+            if item.Enabled then
+                count = count + 1
+            end
+        end
+        return count
+    end
+
+    function WindowMethods:_refreshActiveHUD(animated)
+        if self.Destroyed or not self.HUD then return end
+
+        local count = self:_activeHUDCount()
+        local itemHeight = 16
+        local gap = 2
+        local bodyHeight = 0
+
+        if not self.HUDCollapsed and count > 0 then
+            bodyHeight = 12 + (count * itemHeight) + (math.max(0, count - 1) * gap)
+        end
+
+        local barHeight = self.HUDBarHeight or 22
+        local targetHeight = barHeight + bodyHeight
+
+        if self.HUDCollapseButton then
+            self.HUDCollapseButton.Text = self.HUDCollapsed and "+" or "−"
+        end
+
+        if animated then
+            tween(self.HUDBody, {Size = UDim2.new(1, 0, 0, bodyHeight)}, 0.16, Enum.EasingStyle.Quart)
+            tween(self.HUD, {Size = UDim2.fromOffset(170, targetHeight)}, 0.16, Enum.EasingStyle.Quart)
+        else
+            self.HUDBody.Size = UDim2.new(1, 0, 0, bodyHeight)
+            self.HUD.Size = UDim2.fromOffset(170, targetHeight)
+        end
+
+        local shouldShow = count > 0 and not self.HUDUserHidden
+        self.HUDVisibilityToken = (self.HUDVisibilityToken or 0) + 1
+        local token = self.HUDVisibilityToken
+
+        if shouldShow then
+            self.HUD.Visible = true
+            if animated then
+                tween(self.HUD, {GroupTransparency = 0}, 0.14, Enum.EasingStyle.Quad)
+            else
+                self.HUD.GroupTransparency = 0
+            end
+        else
+            if not self.HUD.Visible then return end
+
+            if animated then
+                tween(self.HUD, {GroupTransparency = 1}, 0.12, Enum.EasingStyle.Quad)
+                task.delay(0.125, function()
+                    if self.Destroyed or self.HUDVisibilityToken ~= token then return end
+                    if self.HUD and not (self:_activeHUDCount() > 0 and not self.HUDUserHidden) then
+                        self.HUD.Visible = false
+                    end
+                end)
+            else
+                self.HUD.GroupTransparency = 1
+                self.HUD.Visible = false
+            end
+        end
+    end
+
+    function WindowMethods:SetActiveHUDCollapsed(collapsed)
+        if self.Destroyed then return end
+        self.HUDCollapsed = collapsed == true
+        self:_refreshActiveHUD(true)
+    end
+
+    function WindowMethods:HideActiveHUD()
+        if self.Destroyed then return end
+        self.HUDUserHidden = true
+        self:_refreshActiveHUD(true)
+    end
+
+    function WindowMethods:ShowActiveHUD()
+        if self.Destroyed then return end
+        self.HUDUserHidden = false
+        self:_refreshActiveHUD(true)
+    end
+
+    function WindowMethods:ToggleActiveHUD()
+        if self.Destroyed then return end
+        if self.HUDUserHidden then
+            self:ShowActiveHUD()
+        else
+            self:HideActiveHUD()
+        end
+    end
+
     function WindowMethods:SetActive(name, enabled)
+        if self.Destroyed then return end
+
         name = tostring(name or "")
         if name == "" then return end
 
+        enabled = enabled == true
         local item = self.HUDItems[name]
 
-        if enabled and not item then
-            item = new("TextLabel", {
-                Size = UDim2.new(1, 0, 0, 16),
+        if not item and not enabled then
+            return
+        end
+
+        if not item then
+            self.HUDItemOrder = (self.HUDItemOrder or 0) + 1
+
+            local itemFrame = new("CanvasGroup", {
+                Size = UDim2.new(1, 0, 0, 0),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                GroupTransparency = 1,
+                Visible = false,
+                LayoutOrder = self.HUDItemOrder,
+                ZIndex = 202,
+            }, self.HUDContent)
+
+            local label = new("TextLabel", {
+                Position = UDim2.fromOffset(6, 0),
+                Size = UDim2.new(1, -6, 1, 0),
                 BackgroundTransparency = 1,
                 Text = string.upper(name),
                 Font = Enum.Font.GothamMedium,
                 TextSize = 10,
                 TextColor3 = Theme.Text,
                 TextXAlignment = Enum.TextXAlignment.Right,
-            }, self.HUDContent)
+                ZIndex = 203,
+            }, itemFrame)
+
+            item = {
+                Frame = itemFrame,
+                Label = label,
+                Enabled = false,
+            }
             self.HUDItems[name] = item
-        elseif item then
-            item.Visible = enabled == true
         end
 
-        local any = false
-        for _, label in pairs(self.HUDItems) do
-            if label.Visible then
-                any = true
-                break
-            end
+        if item.Enabled == enabled then
+            self:_refreshActiveHUD(false)
+            return
         end
 
-        self.HUD.Visible = any
+        item.Enabled = enabled
+
+        if enabled then
+            item.Frame.Visible = true
+            item.Frame.Size = UDim2.new(1, 0, 0, 0)
+            item.Frame.GroupTransparency = 1
+            item.Label.Position = UDim2.fromOffset(6, 0)
+
+            self:_refreshActiveHUD(true)
+
+            tween(item.Frame, {
+                Size = UDim2.new(1, 0, 0, 16),
+                GroupTransparency = 0,
+            }, 0.15, Enum.EasingStyle.Quart)
+            tween(item.Label, {Position = UDim2.fromOffset(0, 0)}, 0.15, Enum.EasingStyle.Quart)
+        else
+            tween(item.Frame, {
+                Size = UDim2.new(1, 0, 0, 0),
+                GroupTransparency = 1,
+            }, 0.13, Enum.EasingStyle.Quad)
+            tween(item.Label, {Position = UDim2.fromOffset(6, 0)}, 0.13, Enum.EasingStyle.Quad)
+
+            self:_refreshActiveHUD(true)
+
+            task.delay(0.135, function()
+                if self.Destroyed or item.Enabled then return end
+                if item.Frame and item.Frame.Parent then
+                    item.Frame.Visible = false
+                end
+            end)
+        end
     end
 
     function WindowMethods:Notify(text, duration)
         if self.Destroyed then return end
 
-        local toast = new("Frame", {
-            AnchorPoint = Vector2.new(1, 1),
-            Position = UDim2.new(1, -18, 1, -18),
+        self.NotificationOrder = (self.NotificationOrder or 0) + 1
+        local order = self.NotificationOrder
+
+        local wrapper = new("Frame", {
+            Size = UDim2.new(1, 0, 0, 0),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            ClipsDescendants = false,
+            LayoutOrder = order,
+            ZIndex = 301,
+        }, self.NotificationHolder)
+
+        local toast = new("CanvasGroup", {
+            AnchorPoint = Vector2.new(1, 0),
+            Position = UDim2.new(1, 24, 0, 0),
             Size = UDim2.fromOffset(240, 42),
             BackgroundColor3 = Theme.Background,
             BorderSizePixel = 0,
-        }, self.Gui)
+            GroupTransparency = 1,
+            ZIndex = 302,
+        }, wrapper)
 
         stroke(toast, Theme.Border, 1)
 
@@ -1802,9 +2353,10 @@ local function BuildFlareUI()
             Size = UDim2.new(0, 2, 1, 0),
             BackgroundColor3 = Theme.Accent,
             BorderSizePixel = 0,
+            ZIndex = 303,
         }, toast)
 
-        local label = new("TextLabel", {
+        new("TextLabel", {
             Position = UDim2.fromOffset(11, 0),
             Size = UDim2.new(1, -18, 1, 0),
             BackgroundTransparency = 1,
@@ -1814,13 +2366,43 @@ local function BuildFlareUI()
             TextColor3 = Theme.Text,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextWrapped = true,
+            ZIndex = 303,
         }, toast)
 
-        task.delay(duration or 1.8, function()
-            if toast.Parent then
-                toast:Destroy()
-            end
-        end)
+        local closed = false
+        local function closeToast()
+            if closed or self.Destroyed then return end
+            closed = true
+
+            tween(toast, {
+                GroupTransparency = 1,
+                Position = UDim2.new(1, 24, 0, 0),
+            }, 0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+            tween(wrapper, {Size = UDim2.new(1, 0, 0, 0)}, 0.16, Enum.EasingStyle.Quart)
+
+            task.delay(0.17, function()
+                if wrapper and wrapper.Parent then
+                    wrapper:Destroy()
+                end
+                self.Notifications[order] = nil
+            end)
+        end
+
+        self.Notifications[order] = {
+            Wrapper = wrapper,
+            Toast = toast,
+            Close = closeToast,
+        }
+
+        tween(wrapper, {Size = UDim2.new(1, 0, 0, 42)}, 0.17, Enum.EasingStyle.Quart)
+        tween(toast, {
+            GroupTransparency = 0,
+            Position = UDim2.new(1, 0, 0, 0),
+        }, 0.18, Enum.EasingStyle.Quart)
+
+        task.delay(math.max(0.1, tonumber(duration) or 1.8), closeToast)
+
+        return toast
     end
 
     function WindowMethods:Confirm(options)
@@ -1830,7 +2412,7 @@ local function BuildFlareUI()
         local shade = new("TextButton", {
             Size = UDim2.fromScale(1, 1),
             BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-            BackgroundTransparency = 0.28,
+            BackgroundTransparency = 1,
             BorderSizePixel = 0,
             Text = "",
             AutoButtonColor = false,
@@ -1907,13 +2489,40 @@ local function BuildFlareUI()
         }, box)
         stroke(confirm, options.Danger and Theme.Danger or Theme.Accent, 1)
 
+        local cancelScale = new("UIScale", {Scale = 1}, cancel)
+        local confirmScale = new("UIScale", {Scale = 1}, confirm)
+
+        local function bindModalButton(button, scaleObject)
+            button.MouseButton1Down:Connect(function()
+                tween(scaleObject, {Scale = 0.975}, 0.07, Enum.EasingStyle.Quad)
+            end)
+            button.MouseButton1Up:Connect(function()
+                tween(scaleObject, {Scale = 1}, 0.14, Enum.EasingStyle.Back)
+            end)
+            button.MouseLeave:Connect(function()
+                tween(scaleObject, {Scale = 1}, 0.12, Enum.EasingStyle.Back)
+            end)
+        end
+
+        bindModalButton(cancel, cancelScale)
+        bindModalButton(confirm, confirmScale)
+
         local closed = false
         local function closeModal()
             if closed then return end
             closed = true
-            if shade.Parent then
-                shade:Destroy()
-            end
+
+            tween(box, {
+                GroupTransparency = 1,
+                Position = UDim2.fromScale(0.5, 0.52),
+            }, 0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+            tween(shade, {BackgroundTransparency = 1}, 0.12, Enum.EasingStyle.Quad)
+
+            task.delay(0.13, function()
+                if shade and shade.Parent then
+                    shade:Destroy()
+                end
+            end)
         end
 
         cancel.MouseButton1Click:Connect(closeModal)
@@ -1926,6 +2535,7 @@ local function BuildFlareUI()
             end
         end)
 
+        tween(shade, {BackgroundTransparency = 0.28}, 0.12, Enum.EasingStyle.Quad)
         tween(box, {
             GroupTransparency = 0,
             Position = UDim2.fromScale(0.5, 0.5),
@@ -1998,7 +2608,21 @@ local function BuildFlareUI()
             BorderSizePixel = 0,
         }, section.Tab.Page)
 
-        stroke(row, Theme.Border, 1)
+        local rowStroke = stroke(row, Theme.Border, 1)
+
+        if not section.Window.IsMobile then
+            table.insert(section.Window.Connections, row.MouseEnter:Connect(function()
+                if section.Window.Destroyed or row:GetAttribute("FlareNoHover") then return end
+                tween(row, {BackgroundColor3 = Theme.RowHover}, 0.11, Enum.EasingStyle.Quad)
+                tween(rowStroke, {Color = Color3.fromRGB(120, 120, 120)}, 0.11, Enum.EasingStyle.Quad)
+            end))
+
+            table.insert(section.Window.Connections, row.MouseLeave:Connect(function()
+                if section.Window.Destroyed or row:GetAttribute("FlareNoHover") then return end
+                tween(row, {BackgroundColor3 = Theme.Row}, 0.11, Enum.EasingStyle.Quad)
+                tween(rowStroke, {Color = Theme.Border}, 0.11, Enum.EasingStyle.Quad)
+            end))
+        end
 
         local titleLabel = new("TextLabel", {
             AnchorPoint = hasDescription and Vector2.new(0, 0) or Vector2.new(0, 0.5),
@@ -2105,13 +2729,13 @@ local function BuildFlareUI()
             if animated then
                 tween(button, {BackgroundColor3 = buttonColor}, 0.22, Enum.EasingStyle.Sine)
                 tween(buttonStroke, {Color = strokeColor}, 0.22, Enum.EasingStyle.Sine)
-                tween(knob, {BackgroundColor3 = knobColor, Position = knobPosition}, 0.26, Enum.EasingStyle.Quint)
-                tween(knobScale, {Scale = 0.72}, 0.08, Enum.EasingStyle.Quad)
-                tween(buttonScale, {Scale = 0.96}, 0.08, Enum.EasingStyle.Quad)
+                tween(knob, {BackgroundColor3 = knobColor, Position = knobPosition}, 0.20, Enum.EasingStyle.Quart)
+                tween(knobScale, {Scale = 0.86}, 0.07, Enum.EasingStyle.Quad)
+                tween(buttonScale, {Scale = 0.985}, 0.07, Enum.EasingStyle.Quad)
                 task.delay(0.08, function()
                     if token == renderToken and knobScale and knobScale.Parent then
-                        tween(knobScale, {Scale = 1}, 0.18, Enum.EasingStyle.Back)
-                        tween(buttonScale, {Scale = 1}, 0.18, Enum.EasingStyle.Back)
+                        tween(knobScale, {Scale = 1}, 0.14, Enum.EasingStyle.Back)
+                        tween(buttonScale, {Scale = 1}, 0.14, Enum.EasingStyle.Back)
                     end
                 end)
             else
@@ -2287,6 +2911,7 @@ local function BuildFlareUI()
                 self.Window.ActiveSliderRelease = nil
             end
             tween(knob, {Size = UDim2.fromOffset(7, 11)}, 0.12, Enum.EasingStyle.Quad)
+            tween(valueLabel, {TextColor3 = Theme.Muted}, 0.12, Enum.EasingStyle.Quad)
         end
 
         local function beginDrag(x, input)
@@ -2296,6 +2921,7 @@ local function BuildFlareUI()
             self.Window.ActiveSliderRelease = endDrag
             setFromX(x)
             tween(knob, {Size = UDim2.fromOffset(9, 15)}, 0.10, Enum.EasingStyle.Quad)
+            tween(valueLabel, {TextColor3 = Theme.Accent}, 0.10, Enum.EasingStyle.Quad)
         end
 
         hitbox.InputBegan:Connect(function(input)
@@ -2356,7 +2982,8 @@ local function BuildFlareUI()
             AutoButtonColor = false,
         }, row)
 
-        stroke(button, Theme.Border, 1)
+        local keybindStroke = stroke(button, Theme.Border, 1)
+        local keybindScale = new("UIScale", {Scale = 1}, button)
 
         local listening = false
         local connection
@@ -2387,6 +3014,13 @@ local function BuildFlareUI()
         button.MouseButton1Click:Connect(function()
             if listening then return end
             listening = true
+            tween(keybindScale, {Scale = 0.98}, 0.06, Enum.EasingStyle.Quad)
+            task.delay(0.06, function()
+                if keybindScale and keybindScale.Parent then
+                    tween(keybindScale, {Scale = 1}, 0.14, Enum.EasingStyle.Back)
+                end
+            end)
+            tween(keybindStroke, {Color = Theme.Accent}, 0.12, Enum.EasingStyle.Quad)
             button.Text = "..."
             button.TextColor3 = Theme.Accent
 
@@ -2404,6 +3038,7 @@ local function BuildFlareUI()
 
                 if name then
                     stopListening()
+                    tween(keybindStroke, {Color = Theme.Border}, 0.12, Enum.EasingStyle.Quad)
                     control:Set(name)
                 end
             end)
@@ -2449,6 +3084,7 @@ local function BuildFlareUI()
             AutoButtonColor = false,
         }, row)
         local buttonStroke = stroke(button, Theme.Border, 1)
+        local dropdownScale = new("UIScale", {Scale = 1}, button)
 
         local valueLabel = new("TextLabel", {
             Position = UDim2.fromOffset(10, 0),
@@ -2718,6 +3354,13 @@ local function BuildFlareUI()
         end
 
         button.MouseButton1Click:Connect(function()
+            tween(dropdownScale, {Scale = 0.985}, 0.06, Enum.EasingStyle.Quad)
+            task.delay(0.06, function()
+                if dropdownScale and dropdownScale.Parent then
+                    tween(dropdownScale, {Scale = 1}, 0.14, Enum.EasingStyle.Back)
+                end
+            end)
+
             if opened then
                 closeDropdown()
             else
@@ -2772,7 +3415,7 @@ local function BuildFlareUI()
             PlaceholderColor3 = Theme.Muted,
             ClearTextOnFocus = false,
         }, row)
-        stroke(box, Theme.Border, 1)
+        local boxStroke = stroke(box, Theme.Border, 1)
 
         local control = {}
 
@@ -2788,7 +3431,12 @@ local function BuildFlareUI()
             end
         end
 
+        box.Focused:Connect(function()
+            tween(boxStroke, {Color = Theme.Accent}, 0.12, Enum.EasingStyle.Quad)
+        end)
+
         box.FocusLost:Connect(function()
+            tween(boxStroke, {Color = Theme.Border}, 0.12, Enum.EasingStyle.Quad)
             value = box.Text
             if options.Numeric then
                 local number = tonumber(value)
@@ -2821,6 +3469,7 @@ local function BuildFlareUI()
             titleLabel:Destroy()
         end
 
+        row:SetAttribute("FlareNoHover", true)
         row.BackgroundColor3 = Theme.Background
 
         local danger = options.Danger == true
