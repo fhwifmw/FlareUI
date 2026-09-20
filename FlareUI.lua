@@ -876,9 +876,15 @@ local function BuildFlareUI()
         if mobile then
             local camera = workspace.CurrentCamera
             local viewport = camera and camera.ViewportSize or Vector2.new(800, 600)
+
+            -- Avoid unnecessary fractional downscaling on mobile. Fractional
+            -- UIScale values can make Roblox text look soft/blurry, so use native
+            -- 1:1 scale whenever the viewport has enough room and only scale down
+            -- when the full window genuinely would not fit.
             local widthScale = math.max(0.1, (viewport.X - 24) / baseWidth)
-            local heightScale = math.max(0.1, (viewport.Y - 92) / baseHeight)
-            mobileScale = math.clamp(math.min(widthScale, heightScale, tonumber(options.MobileScale) or 0.76), 0.50, 0.76)
+            local heightScale = math.max(0.1, (viewport.Y - 28) / baseHeight)
+            local requestedScale = tonumber(options.MobileScale) or 1
+            mobileScale = math.clamp(math.min(widthScale, heightScale, requestedScale), 0.50, 1)
         end
 
         local activeLoader =
@@ -1234,6 +1240,7 @@ local function BuildFlareUI()
                     BackgroundColor3 = Color3.fromRGB(7, 7, 7),
                     BackgroundTransparency = 0.08,
                     BorderSizePixel = 0,
+                    ClipsDescendants = true,
                     AutoButtonColor = false,
                     ZIndex = 1000,
                 }, gui)
@@ -1242,7 +1249,7 @@ local function BuildFlareUI()
                     Name = "Icon",
                     AnchorPoint = Vector2.new(0.5, 0.5),
                     Position = UDim2.fromScale(0.5, 0.5),
-                    Size = UDim2.fromScale(0.82, 0.82),
+                    Size = UDim2.fromScale(1, 1),
                     BackgroundTransparency = 1,
                     BorderSizePixel = 0,
                     Image = flareAsset,
@@ -1251,7 +1258,8 @@ local function BuildFlareUI()
                     ZIndex = 1001,
                 }, mobileButton)
 
-                new("UICorner", {CornerRadius = UDim.new(1, 0)}, mobileIcon)
+                -- The parent button is the circular mask. Keeping the icon full-size
+                -- prevents white/square PNG corners from showing on mobile.
             else
                 mobileButton = new("TextButton", {
                     Name = "FlareMobileToggle",
@@ -1260,6 +1268,7 @@ local function BuildFlareUI()
                     BackgroundColor3 = Color3.fromRGB(7, 7, 7),
                     BackgroundTransparency = 0.08,
                     BorderSizePixel = 0,
+                    ClipsDescendants = true,
                     AutoButtonColor = false,
                     Text = "F",
                     Font = Enum.Font.GothamBlack,
