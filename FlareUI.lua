@@ -23,6 +23,7 @@ local function BuildFlareUI()
             end)
         end
 
+        -- Fallback for environments where the shared global reference was lost.
         for _, parent in ipairs({
             (function()
                 if type(gethui) == "function" then
@@ -543,7 +544,7 @@ local function BuildFlareUI()
                 end
             end
 
-            task.delay(0.11, function()
+            task.delay(0.16, function()
                 if not self.Gui or not self.Gui.Parent then
                     self.Finished = true
                     return
@@ -860,6 +861,52 @@ local function BuildFlareUI()
         return value
     end
 
+    local function escapeRichText(value)
+        value = tostring(value or "")
+        value = value:gsub("&", "&amp;")
+        value = value:gsub("<", "&lt;")
+        value = value:gsub(">", "&gt;")
+        return value
+    end
+
+    local function highlightSearchText(value, query)
+        value = tostring(value or "")
+        query = normalizeSearchText(query)
+        if query == "" then
+            return escapeRichText(value)
+        end
+
+        local lower = value:lower()
+        local pieces = {}
+        local cursor = 1
+
+        while cursor <= #value do
+            local first, last = string.find(lower, query, cursor, true)
+            if not first then
+                table.insert(pieces, escapeRichText(string.sub(value, cursor)))
+                break
+            end
+
+            if first > cursor then
+                table.insert(pieces, escapeRichText(string.sub(value, cursor, first - 1)))
+            end
+
+            table.insert(
+                pieces,
+                '<font color="#9D5CFF">'
+                    .. escapeRichText(string.sub(value, first, last))
+                    .. '</font>'
+            )
+            cursor = last + 1
+        end
+
+        if #value == 0 then
+            return ""
+        end
+
+        return table.concat(pieces)
+    end
+
     function FlareUI:CreateWindow(options)
         options = options or {}
 
@@ -1169,7 +1216,7 @@ local function BuildFlareUI()
             BorderSizePixel = 0,
             Text = "×",
             Font = Enum.Font.GothamBold,
-            TextSize = 13,
+            TextSize = 16,
             TextColor3 = Theme.Muted,
             AutoButtonColor = false,
             ZIndex = 202,
@@ -1205,9 +1252,11 @@ local function BuildFlareUI()
             Padding = UDim.new(0, 2),
         }, hudContent)
 
+        -- Notifications live on the middle-right edge rather than the
+        -- bottom-right corner. They slide horizontally in from off-screen.
         local notificationHolder = new("Frame", {
-            AnchorPoint = Vector2.new(1, 1),
-            Position = UDim2.new(1, -18, 1, -18),
+            AnchorPoint = Vector2.new(1, 0.5),
+            Position = UDim2.new(1, -18, 0.5, 0),
             Size = UDim2.new(0, 240, 1, -36),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
@@ -1218,7 +1267,7 @@ local function BuildFlareUI()
         new("UIListLayout", {
             FillDirection = Enum.FillDirection.Vertical,
             HorizontalAlignment = Enum.HorizontalAlignment.Right,
-            VerticalAlignment = Enum.VerticalAlignment.Bottom,
+            VerticalAlignment = Enum.VerticalAlignment.Center,
             SortOrder = Enum.SortOrder.LayoutOrder,
             Padding = UDim.new(0, 6),
         }, notificationHolder)
@@ -1269,6 +1318,7 @@ local function BuildFlareUI()
             NotificationHolder = notificationHolder,
             NotificationOrder = 0,
             Notifications = {},
+            ModalGuis = {},
             KeyExpiresAt = nil,
             _KeyExpiryLoopRunning = false,
             ActiveSliderDrag = nil,
@@ -1907,7 +1957,23 @@ local function BuildFlareUI()
                 matched = string.find(entry.SearchText, query, 1, true) ~= nil
             end
 
-            entry.Row.Visible = matched
+            -- Search temporarily reveals matching rows even inside a collapsed
+            -- section. Clearing the search restores the section's collapsed state.
+            entry.Row.Visible = matched and (searching or not entry.Section.Collapsed)
+
+            if entry.TitleLabel and entry.TitleLabel.Parent then
+                entry.TitleLabel.RichText = searching and matched
+                entry.TitleLabel.Text = searching and matched
+                    and highlightSearchText(entry.OriginalTitle, query)
+                    or entry.OriginalTitle
+            end
+
+            if entry.DescriptionLabel and entry.DescriptionLabel.Parent then
+                entry.DescriptionLabel.RichText = searching and matched
+                entry.DescriptionLabel.Text = searching and matched
+                    and highlightSearchText(entry.OriginalDescription, query)
+                    or entry.OriginalDescription
+            end
 
             if matched then
                 tabCounts[entry.Tab] = (tabCounts[entry.Tab] or 0) + 1
@@ -2339,7 +2405,7 @@ local function BuildFlareUI()
 
         local toast = new("CanvasGroup", {
             AnchorPoint = Vector2.new(1, 0),
-            Position = UDim2.new(1, 24, 0, 0),
+            Position = UDim2.new(1, 252, 0, 0),
             Size = UDim2.fromOffset(240, 42),
             BackgroundColor3 = Theme.Background,
             BorderSizePixel = 0,
@@ -2376,7 +2442,7 @@ local function BuildFlareUI()
 
             tween(toast, {
                 GroupTransparency = 1,
-                Position = UDim2.new(1, 24, 0, 0),
+                Position = UDim2.new(1, 252, 0, 0),
             }, 0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
             tween(wrapper, {Size = UDim2.new(1, 0, 0, 0)}, 0.16, Enum.EasingStyle.Quart)
 
@@ -2409,15 +2475,35 @@ local function BuildFlareUI()
         if self.Destroyed then return end
         options = options or {}
 
+        -- Use a dedicated inset-ignoring ScreenGui for modal shading. The main
+        -- FlareUI ScreenGui intentionally respects Roblox's inset so the window
+        -- sits below the top bar, but a confirmation shade should cover the
+        -- complete viewport instead of leaving a bright strip at the top.
+        local modalGui = new("ScreenGui", {
+            Name = "FlareModalOverlay",
+            ResetOnSpawn = false,
+            IgnoreGuiInset = true,
+            ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+            DisplayOrder = ((self.Gui and self.Gui.DisplayOrder) or 100000) + 100,
+        })
+
+        local modalParent = (self.Gui and self.Gui.Parent) or resolveParent()
+        if modalParent then
+            modalGui.Parent = modalParent
+        end
+
+        table.insert(self.ModalGuis, modalGui)
+
         local shade = new("TextButton", {
             Size = UDim2.fromScale(1, 1),
+            Position = UDim2.fromScale(0, 0),
             BackgroundColor3 = Color3.fromRGB(0, 0, 0),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             Text = "",
             AutoButtonColor = false,
             ZIndex = 90,
-        }, self.Gui)
+        }, modalGui)
 
         local box = new("CanvasGroup", {
             AnchorPoint = Vector2.new(0.5, 0.5),
@@ -2519,8 +2605,17 @@ local function BuildFlareUI()
             tween(shade, {BackgroundTransparency = 1}, 0.12, Enum.EasingStyle.Quad)
 
             task.delay(0.13, function()
-                if shade and shade.Parent then
-                    shade:Destroy()
+                if modalGui and modalGui.Parent then
+                    modalGui:Destroy()
+                end
+
+                if self.ModalGuis then
+                    for i = #self.ModalGuis, 1, -1 do
+                        if self.ModalGuis[i] == modalGui then
+                            table.remove(self.ModalGuis, i)
+                            break
+                        end
+                    end
                 end
             end)
         end
@@ -2556,15 +2651,84 @@ local function BuildFlareUI()
 
         table.clear(self.Connections)
 
+        for _, modalGui in ipairs(self.ModalGuis or {}) do
+            pcall(function()
+                if modalGui then
+                    modalGui:Destroy()
+                end
+            end)
+        end
+        if self.ModalGuis then
+            table.clear(self.ModalGuis)
+        end
+
         if self.Gui then
             self.Gui:Destroy()
         end
     end
 
+    function SectionMethods:SetCollapsed(collapsed, animated)
+        collapsed = collapsed == true
+        if self.Collapsed == collapsed then return end
+        self.Collapsed = collapsed
+
+        if self.Chevron and self.Chevron.Parent then
+            local targetRotation = self.Collapsed and -90 or 0
+            if animated == false then
+                self.Chevron.Rotation = targetRotation
+            else
+                tween(self.Chevron, {Rotation = targetRotation}, 0.18, Enum.EasingStyle.Quart)
+            end
+        end
+
+        -- Search temporarily owns row visibility so matching results stay easy
+        -- to inspect. The chosen collapsed state is restored when search clears.
+        if self.Window.SearchQuery ~= "" then
+            return
+        end
+
+        for _, entry in ipairs(self.Entries) do
+            local row = entry.Row
+            local baseSize = entry.BaseSize or row.Size
+            entry.BaseSize = baseSize
+
+            if animated == false then
+                row.Size = baseSize
+                row.Visible = not collapsed
+            elseif collapsed then
+                row.Visible = true
+                tween(
+                    row,
+                    {Size = UDim2.new(baseSize.X.Scale, baseSize.X.Offset, 0, 0)},
+                    0.16,
+                    Enum.EasingStyle.Quart,
+                    Enum.EasingDirection.In
+                )
+                task.delay(0.17, function()
+                    if self.Collapsed and self.Window.SearchQuery == "" and row and row.Parent then
+                        row.Visible = false
+                        row.Size = baseSize
+                    end
+                end)
+            else
+                row.Size = UDim2.new(baseSize.X.Scale, baseSize.X.Offset, 0, 0)
+                row.Visible = true
+                tween(row, {Size = baseSize}, 0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+            end
+        end
+    end
+
+    function SectionMethods:ToggleCollapsed()
+        self:SetCollapsed(not self.Collapsed, true)
+    end
+
     function TabMethods:AddSection(name)
-        local header = new("Frame", {
+        local header = new("TextButton", {
             Size = UDim2.new(1, 0, 0, 24),
             BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Text = "",
+            AutoButtonColor = false,
         }, self.Page)
 
         new("Frame", {
@@ -2574,9 +2738,9 @@ local function BuildFlareUI()
             BorderSizePixel = 0,
         }, header)
 
-        new("TextLabel", {
+        local headerLabel = new("TextLabel", {
             Position = UDim2.fromOffset(9, 0),
-            Size = UDim2.new(1, -9, 1, 0),
+            Size = UDim2.new(1, -31, 1, 0),
             BackgroundTransparency = 1,
             Text = string.upper(name),
             Font = Enum.Font.GothamBold,
@@ -2585,16 +2749,48 @@ local function BuildFlareUI()
             TextXAlignment = Enum.TextXAlignment.Left,
         }, header)
 
+        local chevron = createIcon(header, "chevron-down", 12, Theme.Muted)
+        chevron.AnchorPoint = Vector2.new(0.5, 0.5)
+        chevron.Position = UDim2.new(1, -12, 0.5, 0)
+
         local section = setmetatable({
             Tab = self,
             Window = self.Window,
             Name = name,
             Header = header,
+            HeaderLabel = headerLabel,
+            Chevron = chevron,
+            Collapsed = false,
             Entries = {},
         }, SectionMethods)
 
         table.insert(self.Sections, section)
         self.Window:_registerSection(section)
+
+        table.insert(self.Window.Connections, header.MouseButton1Click:Connect(function()
+            if self.Window.Destroyed then return end
+            section:ToggleCollapsed()
+        end))
+
+        if not self.Window.IsMobile then
+            table.insert(self.Window.Connections, header.MouseEnter:Connect(function()
+                tween(headerLabel, {TextColor3 = Theme.Text}, 0.14, Enum.EasingStyle.Quad)
+                if chevron:IsA("ImageLabel") or chevron:IsA("ImageButton") then
+                    tween(chevron, {ImageColor3 = Theme.Text}, 0.14, Enum.EasingStyle.Quad)
+                else
+                    tween(chevron, {TextColor3 = Theme.Text}, 0.14, Enum.EasingStyle.Quad)
+                end
+            end))
+
+            table.insert(self.Window.Connections, header.MouseLeave:Connect(function()
+                tween(headerLabel, {TextColor3 = Theme.Muted}, 0.14, Enum.EasingStyle.Quad)
+                if chevron:IsA("ImageLabel") or chevron:IsA("ImageButton") then
+                    tween(chevron, {ImageColor3 = Theme.Muted}, 0.14, Enum.EasingStyle.Quad)
+                else
+                    tween(chevron, {TextColor3 = Theme.Muted}, 0.14, Enum.EasingStyle.Quad)
+                end
+            end))
+        end
 
         return section
     end
@@ -2606,6 +2802,8 @@ local function BuildFlareUI()
             Size = UDim2.new(1, 0, 0, height or 44),
             BackgroundColor3 = Theme.Row,
             BorderSizePixel = 0,
+            Visible = not section.Collapsed,
+            ClipsDescendants = true,
         }, section.Tab.Page)
 
         local rowStroke = stroke(row, Theme.Border, 1)
@@ -2637,8 +2835,9 @@ local function BuildFlareUI()
             TextYAlignment = Enum.TextYAlignment.Center,
         }, row)
 
+        local descriptionLabel
         if hasDescription then
-            new("TextLabel", {
+            descriptionLabel = new("TextLabel", {
                 Position = UDim2.fromOffset(12, 23),
                 Size = UDim2.new(1, -112, 0, 15),
                 BackgroundTransparency = 1,
@@ -2672,6 +2871,11 @@ local function BuildFlareUI()
             Row = row,
             Section = section,
             Tab = section.Tab,
+            TitleLabel = titleLabel,
+            DescriptionLabel = descriptionLabel,
+            OriginalTitle = tostring(title or ""),
+            OriginalDescription = tostring(description or ""),
+            BaseSize = row.Size,
             SearchText = string.lower(table.concat(terms, " ")),
         }
 
@@ -2767,7 +2971,16 @@ local function BuildFlareUI()
             end
         end
 
-        button.MouseButton1Click:Connect(function()
+        local rowHitbox = new("TextButton", {
+            Size = UDim2.fromScale(1, 1),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Text = "",
+            AutoButtonColor = false,
+            ZIndex = 10,
+        }, row)
+
+        rowHitbox.MouseButton1Click:Connect(function()
             control:Set(not value)
         end)
 
@@ -3070,8 +3283,8 @@ local function BuildFlareUI()
         )
 
         local button = new("TextButton", {
-            AnchorPoint = Vector2.new(1, 0.5),
-            Position = UDim2.new(1, -12, 0.5, 0),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(1, -78, 0.5, 0),
             Size = UDim2.fromOffset(132, 26),
             BackgroundColor3 = Color3.fromRGB(12, 12, 12),
             BorderSizePixel = 0,
@@ -3144,21 +3357,21 @@ local function BuildFlareUI()
                 followConnection = nil
             end
 
-            tween(buttonStroke, {Color = Theme.Border}, 0.12, Enum.EasingStyle.Quad)
-            tween(chevron, {Rotation = 0, ImageColor3 = Theme.Muted}, 0.14, Enum.EasingStyle.Quad)
+            tween(buttonStroke, {Color = Theme.Border}, 0.16, Enum.EasingStyle.Quad)
+            tween(chevron, {Rotation = 0, ImageColor3 = Theme.Muted}, 0.18, Enum.EasingStyle.Quart)
 
             if popup then
                 local oldPopup = popup
                 popup = nil
-                tween(oldPopup, {BackgroundTransparency = 1}, 0.10, Enum.EasingStyle.Quad)
+                tween(oldPopup, {BackgroundTransparency = 1}, 0.15, Enum.EasingStyle.Quad)
                 for _, child in ipairs(oldPopup:GetChildren()) do
                     if child:IsA("TextButton") then
-                        tween(child, {TextTransparency = 1, BackgroundTransparency = 1}, 0.10, Enum.EasingStyle.Quad)
+                        tween(child, {TextTransparency = 1, BackgroundTransparency = 1}, 0.15, Enum.EasingStyle.Quad)
                     elseif child:IsA("UIStroke") then
-                        tween(child, {Transparency = 1}, 0.10, Enum.EasingStyle.Quad)
+                        tween(child, {Transparency = 1}, 0.15, Enum.EasingStyle.Quad)
                     end
                 end
-                task.delay(0.11, function()
+                task.delay(0.16, function()
                     if oldPopup and oldPopup.Parent then
                         oldPopup:Destroy()
                     end
@@ -3223,8 +3436,8 @@ local function BuildFlareUI()
 
             opened = true
             self.Window.ActiveDropdown = control
-            tween(buttonStroke, {Color = Theme.Accent}, 0.12, Enum.EasingStyle.Quad)
-            tween(chevron, {Rotation = 180, ImageColor3 = Theme.Accent}, 0.14, Enum.EasingStyle.Quad)
+            tween(buttonStroke, {Color = Theme.Accent}, 0.16, Enum.EasingStyle.Quad)
+            tween(chevron, {Rotation = 180, ImageColor3 = Theme.Accent}, 0.18, Enum.EasingStyle.Quart)
 
             local visibleCount = math.min(#values, tonumber(options.MaxVisible) or 6)
             local itemHeight = 28
@@ -3321,8 +3534,8 @@ local function BuildFlareUI()
             end
 
             updatePosition()
-            tween(popup, {BackgroundTransparency = 0}, 0.12, Enum.EasingStyle.Quad)
-            tween(popupStroke, {Transparency = 0}, 0.12, Enum.EasingStyle.Quad)
+            tween(popup, {BackgroundTransparency = 0}, 0.16, Enum.EasingStyle.Quad)
+            tween(popupStroke, {Transparency = 0}, 0.16, Enum.EasingStyle.Quad)
 
             for _, child in ipairs(popup:GetChildren()) do
                 if child:IsA("TextButton") then
@@ -3330,7 +3543,7 @@ local function BuildFlareUI()
                     tween(child, {
                         TextTransparency = 0,
                         BackgroundTransparency = selected and 0 or 1,
-                    }, 0.12, Enum.EasingStyle.Quad)
+                    }, 0.16, Enum.EasingStyle.Quad)
                 end
             end
 
@@ -3353,14 +3566,19 @@ local function BuildFlareUI()
             end)
         end
 
-        button.MouseButton1Click:Connect(function()
-            tween(dropdownScale, {Scale = 0.985}, 0.06, Enum.EasingStyle.Quad)
-            task.delay(0.06, function()
-                if dropdownScale and dropdownScale.Parent then
-                    tween(dropdownScale, {Scale = 1}, 0.14, Enum.EasingStyle.Back)
-                end
-            end)
+        button.MouseButton1Down:Connect(function()
+            tween(dropdownScale, {Scale = 0.975}, 0.12, Enum.EasingStyle.Quart)
+        end)
 
+        button.MouseButton1Up:Connect(function()
+            tween(dropdownScale, {Scale = 1}, 0.22, Enum.EasingStyle.Back)
+        end)
+
+        button.MouseLeave:Connect(function()
+            tween(dropdownScale, {Scale = 1}, 0.18, Enum.EasingStyle.Quart)
+        end)
+
+        button.MouseButton1Click:Connect(function()
             if opened then
                 closeDropdown()
             else
@@ -3457,7 +3675,7 @@ local function BuildFlareUI()
     function SectionMethods:AddButton(options)
         options = options or {}
 
-        local row, titleLabel = makeRow(
+        local row, titleLabel, entry = makeRow(
             self,
             40,
             options.Name or "Action",
@@ -3481,7 +3699,8 @@ local function BuildFlareUI()
         local dangerPress = Color3.fromRGB(78, 14, 24)
 
         local button = new("TextButton", {
-            Position = UDim2.fromOffset(2, 2),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.fromScale(0.5, 0.5),
             Size = UDim2.new(1, -4, 1, -4),
             BackgroundColor3 = danger and dangerColor or normalColor,
             BorderSizePixel = 0,
@@ -3495,41 +3714,40 @@ local function BuildFlareUI()
             AutoButtonColor = false,
         }, row)
 
+        if entry then
+            entry.TitleLabel = button
+            entry.OriginalTitle = tostring(options.ButtonText or options.Name or "Action")
+            entry.SearchText = entry.SearchText .. " " .. string.lower(tostring(options.ButtonText or ""))
+        end
+
         local buttonScale = new("UIScale", {Scale = 1}, button)
         local pressed = false
 
         button.MouseEnter:Connect(function()
             if not pressed then
-                tween(button, {BackgroundColor3 = danger and dangerHover or hoverColor}, 0.10, Enum.EasingStyle.Quad)
+                tween(button, {BackgroundColor3 = danger and dangerHover or hoverColor}, 0.14, Enum.EasingStyle.Quad)
             end
         end)
 
         button.MouseLeave:Connect(function()
             pressed = false
-            tween(buttonScale, {Scale = 1}, 0.12, Enum.EasingStyle.Back)
-            tween(button, {BackgroundColor3 = danger and dangerColor or normalColor}, 0.10, Enum.EasingStyle.Quad)
+            tween(buttonScale, {Scale = 1}, 0.18, Enum.EasingStyle.Quart)
+            tween(button, {BackgroundColor3 = danger and dangerColor or normalColor}, 0.14, Enum.EasingStyle.Quad)
         end)
 
         button.MouseButton1Down:Connect(function()
             pressed = true
-            tween(buttonScale, {Scale = 0.975}, 0.07, Enum.EasingStyle.Quad)
-            tween(button, {BackgroundColor3 = danger and dangerPress or pressColor}, 0.07, Enum.EasingStyle.Quad)
+            tween(buttonScale, {Scale = 0.975}, 0.12, Enum.EasingStyle.Quart)
+            tween(button, {BackgroundColor3 = danger and dangerPress or pressColor}, 0.12, Enum.EasingStyle.Quad)
         end)
 
         button.MouseButton1Up:Connect(function()
             pressed = false
-            tween(buttonScale, {Scale = 1}, 0.16, Enum.EasingStyle.Back)
-            tween(button, {BackgroundColor3 = danger and dangerHover or hoverColor}, 0.10, Enum.EasingStyle.Quad)
+            tween(buttonScale, {Scale = 1}, 0.22, Enum.EasingStyle.Back)
+            tween(button, {BackgroundColor3 = danger and dangerHover or hoverColor}, 0.16, Enum.EasingStyle.Quad)
         end)
 
         button.MouseButton1Click:Connect(function()
-            tween(buttonScale, {Scale = 0.965}, 0.06, Enum.EasingStyle.Quad)
-            task.delay(0.06, function()
-                if buttonScale and buttonScale.Parent then
-                    tween(buttonScale, {Scale = 1}, 0.18, Enum.EasingStyle.Back)
-                end
-            end)
-
             if options.Callback then
                 task.spawn(options.Callback)
             end
