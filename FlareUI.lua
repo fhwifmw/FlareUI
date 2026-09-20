@@ -2395,7 +2395,10 @@ local function BuildFlareUI()
         local order = self.NotificationOrder
 
         local wrapper = new("Frame", {
-            Size = UDim2.new(1, 0, 0, 0),
+            -- Reserve the toast's final vertical slot immediately. This keeps
+            -- the toast at a fixed Y position while its entrance animation is
+            -- purely horizontal from the right.
+            Size = UDim2.new(1, 0, 0, 42),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             ClipsDescendants = false,
@@ -2440,13 +2443,22 @@ local function BuildFlareUI()
             if closed or self.Destroyed then return end
             closed = true
 
+            -- Exit directly to the right while preserving the toast's Y.
+            -- Collapse the stack slot only after the toast is off-screen so
+            -- the notification itself never drifts diagonally while leaving.
             tween(toast, {
                 GroupTransparency = 1,
                 Position = UDim2.new(1, 252, 0, 0),
-            }, 0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-            tween(wrapper, {Size = UDim2.new(1, 0, 0, 0)}, 0.16, Enum.EasingStyle.Quart)
+            }, 0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 
-            task.delay(0.17, function()
+            task.delay(0.16, function()
+                if self.Destroyed then return end
+                if wrapper and wrapper.Parent then
+                    tween(wrapper, {Size = UDim2.new(1, 0, 0, 0)}, 0.14, Enum.EasingStyle.Quart)
+                end
+            end)
+
+            task.delay(0.31, function()
                 if wrapper and wrapper.Parent then
                     wrapper:Destroy()
                 end
@@ -2460,11 +2472,12 @@ local function BuildFlareUI()
             Close = closeToast,
         }
 
-        tween(wrapper, {Size = UDim2.new(1, 0, 0, 42)}, 0.17, Enum.EasingStyle.Quart)
+        -- The wrapper is already at full height, so this tween is a straight
+        -- right-to-left slide with no vertical movement from the list layout.
         tween(toast, {
             GroupTransparency = 0,
             Position = UDim2.new(1, 0, 0, 0),
-        }, 0.18, Enum.EasingStyle.Quart)
+        }, 0.20, Enum.EasingStyle.Quart)
 
         task.delay(math.max(0.1, tonumber(duration) or 1.8), closeToast)
 
