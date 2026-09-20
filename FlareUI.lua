@@ -1250,11 +1250,12 @@ local function BuildFlareUI()
             Padding = UDim.new(0, 2),
         }, hudContent)
 
-        -- Notifications live on the middle-right edge rather than the
-        -- bottom-right corner. They slide horizontally in from off-screen.
+        -- Notifications rest in the bottom-right corner. Each toast still
+        -- enters and exits horizontally from the direct right of its final
+        -- position, so there is no diagonal travel.
         local notificationHolder = new("Frame", {
-            AnchorPoint = Vector2.new(1, 0.5),
-            Position = UDim2.new(1, -18, 0.5, 0),
+            AnchorPoint = Vector2.new(1, 1),
+            Position = UDim2.new(1, -18, 1, -18),
             Size = UDim2.new(0, 240, 1, -36),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
@@ -1265,7 +1266,7 @@ local function BuildFlareUI()
         new("UIListLayout", {
             FillDirection = Enum.FillDirection.Vertical,
             HorizontalAlignment = Enum.HorizontalAlignment.Right,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
+            VerticalAlignment = Enum.VerticalAlignment.Bottom,
             SortOrder = Enum.SortOrder.LayoutOrder,
             Padding = UDim.new(0, 6),
         }, notificationHolder)
