@@ -22,8 +22,6 @@ local function BuildFlareUI()
                 rawset(environment, "__FlareBootstrapGui", nil)
             end)
         end
-
-        -- Fallback for environments where the shared global reference was lost.
         for _, parent in ipairs({
             (function()
                 if type(gethui) == "function" then
